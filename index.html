@@ -90,6 +90,28 @@
   </div>
 </section>
 
+<!-- ============================ DISTANCE ============================ -->
+<section class="tab" data-tab="dist">
+  <h2>Distance Attenuation / Geometric Spreading</h2>
+  <p class="desc">Given a level L₁ at distance r₁, find the level L₂ at distance r₂ as the sound spreads out.
+     A <strong>point source</strong> spreads spherically (−6 dB per doubling); a <strong>line source</strong>
+     (e.g. a continuous stream of traffic) spreads cylindrically (−3 dB per doubling).</p>
+
+  <div class="card">
+    <h3>Compute L₂ at a new distance</h3>
+    <div class="row">
+      <label>Known level L₁ (dB) <input id="dist-L1" type="number" value="78" step="any"></label>
+      <label>At distance r₁ (m) <input id="dist-r1" type="number" value="6.5" step="any"></label>
+      <label>New distance r₂ (m) <input id="dist-r2" type="number" value="65" step="any"></label>
+    </div>
+    <button onclick="doDistance()">Compute</button>
+    <div id="dist-out" class="result"></div>
+    <p class="note">
+      Point (spherical): L₂ = L₁ − 20·log<sub>10</sub>(r₂/r₁) &nbsp;·&nbsp;
+      Line (cylindrical): L₂ = L₁ − 10·log<sub>10</sub>(r₂/r₁)</p>
+  </div>
+</section>
+
 <!-- ============================ WEIGHTING ============================ -->
 <section class="tab" data-tab="weight">
   <h2>A / B / C Weighting &amp; Overall Level</h2>
@@ -131,7 +153,9 @@
   <div class="card">
     <h3>L<sub>eq</sub> from levels &amp; durations</h3>
     <p class="hint">One row per noise component: <code>level, duration</code> (e.g. <code>86, 3.5</code>).
-       Duration is the total time at that level.</p>
+       Duration is the total time at that level. <em>Units may be mixed</em> only if you convert them
+       first — keep all durations and T in the same unit. For sound-level-meter periods (e.g. 30–70 s),
+       enter the period <em>length</em> (40) as the duration.</p>
     <textarea id="leq-list" rows="6" placeholder="86, 3.5&#10;88, 3&#10;95, 1&#10;98, 0.5">86, 3.5
 88, 3
 95, 1

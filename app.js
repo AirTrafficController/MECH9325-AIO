@@ -24,9 +24,10 @@ function show(id, html, cls = 'ok') {
 
 /* ---------------- Tabs ---------------- */
 const TABS = [
-  ['combine', 'Combine'], ['subtract', 'Subtract'], ['weight', 'Weighting'],
-  ['leq', 'Leq'], ['dose', 'Noise Dose'], ['loud', 'Loudness'],
-  ['speech', 'Speech (PSIL)'], ['stats', 'Stats / SEL'], ['table', 'Tables'],
+  ['combine', 'Combine'], ['subtract', 'Subtract'], ['dist', 'Distance'],
+  ['weight', 'Weighting'], ['leq', 'Leq'], ['dose', 'Noise Dose'],
+  ['loud', 'Loudness'], ['speech', 'Speech (PSIL)'], ['stats', 'Stats / SEL'],
+  ['table', 'Tables'],
 ];
 function initTabs() {
   const nav = $('tabs');
@@ -92,6 +93,22 @@ function doOneOfN() {
   show('one-out',
     `Each source = <b>${fmt(one)} dB</b><br>
      <span class="small">= ${fmt(tot)} − 10·log₁₀(${N})</span>`);
+}
+
+/* ---------------- Distance / spreading ---------------- */
+function doDistance() {
+  const L1 = Number($('dist-L1').value), r1 = Number($('dist-r1').value), r2 = Number($('dist-r2').value);
+  if (!(r1 > 0) || !(r2 > 0)) return show('dist-out', 'Distances must be > 0.', 'err');
+  const ratio = lg(r2 / r1);
+  const pt = L1 - 20 * ratio;   // point / spherical
+  const ln = L1 - 10 * ratio;   // line / cylindrical
+  show('dist-out',
+    `<table class="bands">
+       <tr><th>Source type</th><th>Spreading</th><th>L₂ at ${fmt(r2)} m</th></tr>
+       <tr><td>Point (isolated vehicle)</td><td>−6 dB/doubling</td><td><b>${fmt(pt)} dB</b></td></tr>
+       <tr><td>Line (continuous traffic)</td><td>−3 dB/doubling</td><td><b>${fmt(ln)} dB</b></td></tr>
+     </table>
+     <span class="small">From ${fmt(L1)} dB at ${fmt(r1)} m · 10·log₁₀(r₂/r₁) = ${fmt(10 * ratio)} dB</span>`);
 }
 
 /* ---------------- Weighting ---------------- */
