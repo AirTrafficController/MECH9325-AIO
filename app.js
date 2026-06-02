@@ -24,10 +24,12 @@ function show(id, html, cls = 'ok') {
 
 /* ---------------- Tabs ---------------- */
 const TABS = [
-  ['combine', 'Combine'], ['subtract', 'Subtract'], ['dist', 'Distance'],
-  ['weight', 'Weighting'], ['leq', 'Leq'], ['dose', 'Noise Dose'],
-  ['loud', 'Loudness'], ['speech', 'Speech (PSIL)'], ['stats', 'Stats / SEL'],
-  ['table', 'Tables'],
+  ['levels', 'Levels'], ['combine', 'Combine'], ['subtract', 'Subtract'],
+  ['waves', 'Waves'], ['dist', 'Distance'], ['room', 'Room Acoustics'],
+  ['power', 'Sound Power'], ['weight', 'Weighting'], ['leq', 'Leq'],
+  ['dose', 'Noise Dose'], ['loud', 'Loudness'], ['speech', 'Speech (PSIL)'],
+  ['community', 'Community'], ['stats', 'Stats / SEL'], ['tl', 'Insulation (TL)'],
+  ['muffler', 'Mufflers'], ['table', 'Tables'],
 ];
 function initTabs() {
   const nav = $('tabs');
@@ -266,6 +268,227 @@ function doSort() {
        <tr><td>L<sub>eq</sub></td><td><b>${fmt(leq)}</b> dB</td></tr>
        <tr><td>L₉₉ (smallest)</td><td><b>${fmt(l99)}</b> dB</td></tr>
      </table>`);
+}
+
+/* ---------------- Levels & conversions ---------------- */
+function blank(id) { return $(id).value.trim() === ''; }
+function doSPL() {
+  if (!blank('lp-p')) {
+    const p = Number($('lp-p').value);
+    if (!(p > 0)) return show('lp-out', 'Pressure must be > 0.', 'err');
+    const Lp = 20 * lg(p / P_REF);
+    $('lp-val').value = fmt(Lp, 2);
+    return show('lp-out', `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b> &nbsp;(from p = ${p} Pa)`);
+  }
+  const Lp = Number($('lp-val').value), p = P_REF * 10 ** (Lp / 20);
+  $('lp-p').value = p.toPrecision(4);
+  show('lp-out', `p<sub>rms</sub> = <b>${p.toPrecision(4)} Pa</b> &nbsp;(from L<sub>p</sub> = ${Lp} dB)`);
+}
+function doLw() {
+  if (!blank('lw-L')) {
+    const L = Number($('lw-L').value), W = W_REF * 10 ** (L / 10);
+    $('lw-W').value = W.toPrecision(4);
+    return show('lw-out', `W = <b>${W.toPrecision(4)} W</b>`);
+  }
+  const W = Number($('lw-W').value);
+  if (!(W > 0)) return show('lw-out', 'Power must be > 0.', 'err');
+  const L = 10 * lg(W / W_REF);
+  $('lw-L').value = fmt(L, 2);
+  show('lw-out', `L<sub>w</sub> = <b>${fmt(L, 2)} dB</b>`);
+}
+function doLI() {
+  let I;
+  if (!blank('li-p')) { const p = Number($('li-p').value); I = p * p / RHO_C; }
+  else I = Number($('li-I').value);
+  if (!(I > 0)) return show('li-out', 'Enter intensity or pressure.', 'err');
+  const LI = 10 * lg(I / I_REF);
+  show('li-out', `I = <b>${I.toPrecision(4)} W/m²</b><br>L<sub>I</sub> = <b>${fmt(LI, 2)} dB</b>`);
+}
+function doRMS() {
+  const P = Number($('rms-P').value), p = P / Math.SQRT2;
+  show('rms-out', `p<sub>rms</sub> = <b>${p.toPrecision(4)} Pa</b> &nbsp;→ SPL = ${fmt(20 * lg(p / P_REF), 2)} dB`);
+}
+function doRMScombine() {
+  const ps = $('rms-list').value.trim().split('\n').map(s => Number(s.trim())).filter(s => !isNaN(s));
+  if (!ps.length) return show('rmsc-out', 'Enter at least one pressure.', 'err');
+  const tot = Math.sqrt(ps.reduce((a, p) => a + p * p, 0));
+  show('rmsc-out', `p<sub>tot</sub> = <b>${tot.toPrecision(4)} Pa</b> &nbsp;→ SPL = <b>${fmt(20 * lg(tot / P_REF), 2)} dB</b>`);
+}
+
+/* ---------------- Waves ---------------- */
+function doWave() {
+  let c = $('wave-c').value, f = $('wave-f').value, lam = $('wave-lam').value;
+  c = c === '' ? null : Number(c); f = f === '' ? null : Number(f); lam = lam === '' ? null : Number(lam);
+  const known = [c, f, lam].filter(v => v !== null).length;
+  if (known < 2) return show('wave-out', 'Enter at least two of c, f, λ.', 'err');
+  if (c === null) c = f * lam; else if (f === null) f = c / lam; else if (lam === null) lam = c / f;
+  $('wave-c').value = fmt(c, 3); $('wave-f').value = fmt(f, 3); $('wave-lam').value = fmt(lam, 4);
+  const w = 2 * Math.PI * f, k = 2 * Math.PI / lam;
+  show('wave-out',
+    `c=<b>${fmt(c, 2)} m/s</b> · f=<b>${fmt(f, 2)} Hz</b> · λ=<b>${fmt(lam, 4)} m</b><br>
+     T = ${(1 / f).toPrecision(4)} s · ω = ${fmt(w, 1)} rad/s · k = ${fmt(k, 3)} rad/m`);
+}
+function doSOS() {
+  const Tc = Number($('sos-T').value), R = Number($('sos-R').value), g = Number($('sos-g').value);
+  const T0 = Tc + 273.2, c = Math.sqrt(g * R * T0);
+  show('sos-out',
+    `T₀ = ${fmt(T0, 1)} K<br>c = √(${g}·${R}·${fmt(T0, 1)}) = <b>${fmt(c, 2)} m/s</b><br>
+     <span class="small">Air shortcut 20.06·√T₀ = ${fmt(20.06 * Math.sqrt(T0), 2)} m/s</span>`);
+}
+function doParticle() {
+  const P = Number($('pv-P').value), f = Number($('pv-f').value), rc = Number($('pv-rc').value);
+  const w = 2 * Math.PI * f, u = P / rc, xi = u / w, I = P * P / (2 * rc);
+  show('pv-out',
+    `Particle velocity u = <b>${u.toExponential(3)} m/s</b><br>
+     Displacement ξ = <b>${xi.toExponential(3)} m</b><br>
+     Intensity I = <b>${I.toExponential(3)} W/m²</b>`);
+}
+function doBandEdges() {
+  const fc = Number($('be-fc').value), type = $('be-type').value;
+  if (!(fc > 0)) return show('be-out', 'Centre frequency must be > 0.', 'err');
+  const e = bandEdges(fc, type);
+  show('be-out',
+    `Lower = <b>${fmt(e.lower, 1)} Hz</b> · Upper = <b>${fmt(e.upper, 1)} Hz</b><br>
+     Bandwidth = ${fmt(e.upper - e.lower, 1)} Hz`);
+}
+function doPipe() {
+  const L = Number($('pipe-L').value), c = Number($('pipe-c').value);
+  if (!(L > 0)) return show('pipe-out', 'Length must be > 0.', 'err');
+  let s = '';
+  for (let n = 1; n <= 4; n++) s += `f<sub>${n}</sub> = <b>${fmt((2 * n - 1) * c / (4 * L), 1)} Hz</b><br>`;
+  show('pipe-out', s);
+}
+
+/* ---------------- Lw → Lp at distance ---------------- */
+function doLwLp() {
+  const Lw = Number($('lwlp-Lw').value), r = Number($('lwlp-r').value), t = $('lwlp-type').value;
+  if (!(r > 0)) return show('lwlp-out', 'Distance must be > 0.', 'err');
+  const map = { pf: [20, 11], pg: [20, 8], lf: [10, 8], lg: [10, 5] };
+  const [coef, k] = map[t];
+  const Lp = Lw - coef * lg(r) - k;
+  show('lwlp-out', `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b> &nbsp;<span class="small">= ${Lw} − ${coef}·log₁₀(${r}) − ${k}</span>`);
+}
+
+/* ---------------- Room acoustics ---------------- */
+function doRT() {
+  let V = $('rt-V').value, S = $('rt-S').value, a = $('rt-a').value, T = $('rt-T').value;
+  V = V === '' ? null : +V; S = S === '' ? null : +S; a = a === '' ? null : +a; T = T === '' ? null : +T;
+  const miss = [V, S, a, T].filter(x => x === null).length;
+  if (miss !== 1) return show('rt-out', 'Fill exactly three values; leave one blank.', 'err');
+  if (T === null) T = 0.161 * V / (a * S);
+  else if (a === null) a = 0.161 * V / (T * S);
+  else if (S === null) S = 0.161 * V / (T * a);
+  else if (V === null) V = T * a * S / 0.161;
+  $('rt-V').value = fmt(V, 2); $('rt-S').value = fmt(S, 2); $('rt-a').value = fmt(a, 4); $('rt-T').value = fmt(T, 3);
+  show('rt-out',
+    `T₆₀ = <b>${fmt(T, 3)} s</b> · ᾱ = <b>${fmt(a, 4)}</b><br>
+     Equivalent absorption area A = ᾱ·S = <b>${fmt(a * S, 2)} m²</b>`);
+}
+function doAvgAbs() {
+  const rows = parseRows($('aa-list').value);
+  let num = 0, den = 0, bad = false;
+  rows.forEach(r => { if (r.length < 2 || r.some(isNaN)) { bad = true; return; } num += r[0] * r[1]; den += r[0]; });
+  if (bad || !den) return show('aa-out', 'Each row needs: area, α.', 'err');
+  show('aa-out', `ᾱ = <b>${fmt(num / den, 4)}</b><br><span class="small">ΣS = ${fmt(den, 1)} m² · ΣαS = ${fmt(num, 2)} m²</span>`);
+}
+function doRoomConst() {
+  const a = Number($('rc-a').value), S = Number($('rc-S').value);
+  if (!(a > 0 && a < 1)) return show('rc-out', 'ᾱ must be between 0 and 1.', 'err');
+  show('rc-out', `R = <b>${fmt(a * S / (1 - a), 2)} m²</b>`);
+}
+function doRoomEq() {
+  const Lw = Number($('re-Lw').value), r = Number($('re-r').value), R = Number($('re-R').value), Q = Number($('re-Q').value);
+  if (!(r > 0) || !(R > 0)) return show('re-out', 'r and R must be > 0.', 'err');
+  const direct = Q / (4 * Math.PI * r * r), rev = 4 / R;
+  const Lp = Lw + 10 * lg(direct + rev);
+  const dom = direct > rev ? 'direct field dominates' : 'reverberant field dominates';
+  show('re-out',
+    `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b><br>
+     <span class="small">direct Q/4πr² = ${direct.toExponential(2)} · reverberant 4/R = ${rev.toExponential(2)} → ${dom}</span>`);
+}
+
+/* ---------------- Sound power measurement ---------------- */
+function doK1() {
+  const st = Number($('k1-st').value), b = Number($('k1-b').value), dL = st - b;
+  if (dL <= 0) return show('k1-out', 'Source level must exceed background.', 'err');
+  if (dL < 6) return show('k1-out', `ΔL = ${fmt(dL, 1)} dB < 6 dB — measurement invalid (background too high).`, 'warn');
+  const K1 = -10 * lg(1 - 10 ** (-dL / 10));
+  show('k1-out', `ΔL = ${fmt(dL, 1)} dB · K₁ = <b>${fmt(K1, 3)} dB</b>` +
+    (dL >= 15 ? ' (≥15 dB → negligible)' : ''));
+}
+function doK2() {
+  const S = Number($('k2-S').value), A = Number($('k2-A').value);
+  if (!(A > 0)) return show('k2-out', 'Absorption area must be > 0.', 'err');
+  show('k2-out', `K₂ = <b>${fmt(10 * lg(1 + 4 * S / A), 3)} dB</b>`);
+}
+function doLwMeas() {
+  const lp = Number($('lwm-lp').value), k1 = Number($('lwm-k1').value),
+        k2 = Number($('lwm-k2').value), S = Number($('lwm-S').value);
+  if (!(S > 0)) return show('lwm-out', 'Surface area must be > 0.', 'err');
+  const Lw = (lp - k1 - k2) + 10 * lg(S);
+  show('lwm-out', `L<sub>w</sub> = <b>${fmt(Lw, 2)} dB</b> &nbsp;<span class="small">= (${lp}−${k1}−${k2}) + 10·log₁₀(${S})</span>`);
+}
+
+/* ---------------- Community noise ---------------- */
+function doLdn() {
+  const d = Number($('ldn-day').value), n = Number($('ldn-night').value);
+  const ldn = 10 * lg((15 * 10 ** (d / 10) + 9 * 10 ** ((n + 10) / 10)) / 24);
+  show('ldn-out', `L<sub>dn</sub> = <b>${fmt(ldn, 2)} dB(A)</b>`);
+}
+
+/* ---------------- Insulation / TL ---------------- */
+function massFromInputs() {
+  if (!blank('ml-M')) return Number($('ml-M').value);
+  if (!blank('ml-rho') && !blank('ml-t')) return Number($('ml-rho').value) * Number($('ml-t').value) / 1000;
+  return NaN;
+}
+function doMassLaw() {
+  const M = massFromInputs(), f = Number($('ml-f').value);
+  if (!(M > 0)) return show('ml-out', 'Enter surface mass, or density and thickness.', 'err');
+  const TL = 20 * lg(M * f) - 42.4;
+  show('ml-out',
+    `Surface mass M = ${fmt(M, 3)} kg/m²<br>TL = <b>${fmt(TL, 1)} dB</b> at ${fmt(f)} Hz`);
+}
+function doInterface() {
+  const z1 = Number($('if-z1').value), z2 = Number($('if-z2').value), r = z2 / z1;
+  const at = 4 * r / ((r + 1) ** 2), ar = ((r - 1) / (r + 1)) ** 2;
+  show('if-out',
+    `Impedance ratio r = <b>${fmt(r, 3)}</b><br>
+     α<sub>t</sub> = <b>${at.toPrecision(4)}</b> · α<sub>r</sub> = <b>${fmt(ar, 4)}</b><br>
+     TL = <b>${fmt(-10 * lg(at), 2)} dB</b>`);
+}
+function doTLcoef() {
+  const a = Number($('tlt-a').value);
+  if (!(a > 0 && a <= 1)) return show('tlt-out', 'α must be between 0 and 1.', 'err');
+  show('tlt-out', `TL = <b>${fmt(-10 * lg(a), 2)} dB</b>`);
+}
+function doPanelRes() {
+  const K = Number($('pr-K').value), M = Number($('pr-M').value);
+  if (!(K > 0 && M > 0)) return show('pr-out', 'K and M must be > 0.', 'err');
+  show('pr-out', `f<sub>n</sub> = <b>${fmt(Math.sqrt(K / M) / (2 * Math.PI), 2)} Hz</b>`);
+}
+
+/* ---------------- Mufflers ---------------- */
+function doAreaChange() {
+  const s1 = Number($('ac-s1').value), s2 = Number($('ac-s2').value);
+  if (!(s1 > 0 && s2 > 0)) return show('ac-out', 'Areas must be > 0.', 'err');
+  const Tt = 4 * s1 * s2 / ((s1 + s2) ** 2);
+  show('ac-out', `T<sub>t</sub> = ${fmt(Tt, 4)} · TL = <b>${fmt(-10 * lg(Tt), 2)} dB</b>`);
+}
+function doExpChamber() {
+  const s1 = Number($('ec-s1').value), s2 = Number($('ec-s2').value), L = Number($('ec-L').value),
+        f = Number($('ec-f').value), c = Number($('ec-c').value);
+  if (!(s1 > 0 && s2 > 0)) return show('ec-out', 'Areas must be > 0.', 'err');
+  const m = s2 / s1, kL = 2 * Math.PI * f / c * L;
+  const TL = 10 * lg(Math.cos(kL) ** 2 + 0.25 * (m + 1 / m) ** 2 * Math.sin(kL) ** 2);
+  const lam = c / f;
+  show('ec-out',
+    `kL = ${fmt(kL, 3)} rad · TL = <b>${fmt(TL, 2)} dB</b><br>
+     <span class="small">m = S₂/S₁ = ${fmt(m, 2)} · λ = ${fmt(lam, 3)} m · λ/4 = ${fmt(lam / 4, 3)} m (peak length)</span>`);
+}
+function doLevelDiff() {
+  const a = Number($('diff-1').value), b = Number($('diff-2').value);
+  show('diff-out', `Difference = <b>${fmt(a - b, 2)} dB</b> &nbsp;<span class="small">(TL / IL / NR depending on context)</span>`);
 }
 
 /* ---------------- Reference table ---------------- */

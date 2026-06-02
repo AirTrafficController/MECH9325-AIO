@@ -72,3 +72,16 @@ function voiceEffort(psil, dist) {
   if (adj < 75) return 'Shouting';
   return 'Communication impossible';
 }
+
+// ---- Physical constants & reference values (course defaults) ----
+const P_REF = 2e-5;       // reference sound pressure, Pa (20 uPa)
+const W_REF = 1e-12;      // reference sound power, W
+const I_REF = 1e-12;      // reference sound intensity, W/m^2
+const RHO_C = 415;        // characteristic impedance of air, rayls (1.21*343)
+const C_AIR = 343;        // speed of sound in air at 20 C, m/s
+
+// Octave / one-third octave band edge factors from a centre frequency.
+function bandEdges(fc, type) {
+  const k = type === 'third' ? Math.pow(2, 1 / 6) : Math.SQRT2;
+  return { lower: fc / k, upper: fc * k };
+}
