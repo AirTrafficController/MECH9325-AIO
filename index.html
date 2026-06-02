@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>MECH9325 — Acoustics &amp; Noise&nbsp;Control</h1>
+    <p class="sub">Plug-and-play calculator covering the quiz material: dB arithmetic, weighting networks,
+       L<sub>eq</sub>, noise dose &amp; OH&amp;S limits, loudness, speech interference and statistical levels.</p>
+  </div>
+</header>
+
+<nav id="tabs" class="wrap"></nav>
+
+<main class="wrap">
+
+<!-- ============================ COMBINE ============================ -->
+<section class="tab" data-tab="combine">
+  <h2>Combine / Add Sound Levels</h2>
+  <p class="desc">Add incoherent sound levels (dB). Levels combine on an energy basis:
+     <span class="f">L<sub>tot</sub> = 10·log<sub>10</sub>( Σ 10<sup>L<sub>i</sub>/10</sup> )</span>.
+     Use this to add the noise of several sources, or to find the level of <em>N</em> identical sources.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Add a list of levels</h3>
+      <p class="hint">One level (dB) per line.</p>
+      <textarea id="combine-list" rows="6" placeholder="80&#10;80&#10;74">80
+80</textarea>
+      <button onclick="doCombine()">Combine</button>
+      <div id="combine-out" class="result"></div>
+    </div>
+
+    <div class="card">
+      <h3>N identical sources</h3>
+      <p class="hint">Level of one source, plus how many of them.</p>
+      <label>Level of one source L₁ (dB)
+        <input id="ident-L" type="number" value="77" step="any"></label>
+      <label>Number of identical sources N
+        <input id="ident-N" type="number" value="2" step="1" min="1"></label>
+      <button onclick="doIdentical()">Compute total</button>
+      <div id="ident-out" class="result"></div>
+      <p class="note">L<sub>tot</sub> = L₁ + 10·log<sub>10</sub>(N)</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Increase in level when more sources are added</h3>
+    <p class="hint">e.g. a compound contains N₁ barking dogs measured at L₁; add more so there are N₂.</p>
+    <div class="row">
+      <label>Initial number N₁ <input id="inc-n1" type="number" value="47" step="1"></label>
+      <label>Measured level L₁ (dB) <input id="inc-L1" type="number" value="66" step="any"></label>
+      <label>Sources added <input id="inc-add" type="number" value="7" step="1"></label>
+    </div>
+    <button onclick="doIncrease()">Compute</button>
+    <div id="inc-out" class="result"></div>
+    <p class="note">ΔL = 10·log<sub>10</sub>(N₂ / N₁) &nbsp;·&nbsp; New level = L₁ + ΔL</p>
+  </div>
+</section>
+
+<!-- ============================ SUBTRACT ============================ -->
+<section class="tab" data-tab="subtract">
+  <h2>Subtract / Remove a Source</h2>
+  <p class="desc">Energy subtraction:
+     <span class="f">L<sub>rem</sub> = 10·log<sub>10</sub>( 10<sup>L<sub>tot</sub>/10</sup> − 10<sup>L<sub>bg</sub>/10</sup> )</span>.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Remove background / one source</h3>
+      <label>Total level L<sub>tot</sub> (dB) <input id="sub-tot" type="number" value="80" step="any"></label>
+      <label>Level to remove L<sub>bg</sub> (dB) <input id="sub-bg" type="number" value="77" step="any"></label>
+      <button onclick="doSubtract()">Compute remaining</button>
+      <div id="sub-out" class="result"></div>
+    </div>
+
+    <div class="card">
+      <h3>One of N identical sources</h3>
+      <p class="hint">N identical machines give L<sub>tot</sub>; find the level of just one.</p>
+      <label>Combined level L<sub>tot</sub> (dB) <input id="one-tot" type="number" value="80" step="any"></label>
+      <label>Number of sources N <input id="one-N" type="number" value="2" step="1" min="1"></label>
+      <button onclick="doOneOfN()">Compute one source</button>
+      <div id="one-out" class="result"></div>
+      <p class="note">L₁ = L<sub>tot</sub> − 10·log<sub>10</sub>(N)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ WEIGHTING ============================ -->
+<section class="tab" data-tab="weight">
+  <h2>A / B / C Weighting &amp; Overall Level</h2>
+  <p class="desc">Enter the band levels, choose a weighting network, and get the weighted band levels and the
+     overall weighted level. Leave a band blank to ignore it.
+     <span class="f">L<sub>W</sub> = 10·log<sub>10</sub>( Σ 10<sup>(L<sub>i</sub>+W<sub>i</sub>)/10</sup> )</span></p>
+
+  <div class="row">
+    <label>Weighting
+      <select id="w-net">
+        <option value="A" selected>A-weighting → dB(A)</option>
+        <option value="B">B-weighting → dB(B)</option>
+        <option value="C">C-weighting → dB(C)</option>
+        <option value="Z">None (linear) → dB</option>
+      </select>
+    </label>
+    <label>Band spacing
+      <select id="w-band" onchange="buildWeightTable()">
+        <option value="oct" selected>Octave (63 Hz – 8 kHz)</option>
+        <option value="octfull">Octave (31.5 Hz – 16 kHz)</option>
+        <option value="third">⅓ Octave (25 Hz – 20 kHz)</option>
+      </select>
+    </label>
+    <button onclick="prefillVehicle()">Load Quiz-1 example</button>
+  </div>
+
+  <div id="w-table-wrap"></div>
+  <button onclick="doWeight()">Calculate overall level</button>
+  <div id="w-out" class="result"></div>
+</section>
+
+<!-- ============================ LEQ ============================ -->
+<section class="tab" data-tab="leq">
+  <h2>Equivalent Continuous Level L<sub>eq</sub></h2>
+  <p class="desc">General form over a reference period <em>T</em>:
+     <span class="f">L<sub>eq,T</sub> = 10·log<sub>10</sub>( (1/T) · Σ t<sub>i</sub>·10<sup>L<sub>i</sub>/10</sup> )</span>.
+     Times may be entered in any unit as long as <em>T</em> uses the same unit.</p>
+
+  <div class="card">
+    <h3>L<sub>eq</sub> from levels &amp; durations</h3>
+    <p class="hint">One row per noise component: <code>level, duration</code> (e.g. <code>86, 3.5</code>).
+       Duration is the total time at that level.</p>
+    <textarea id="leq-list" rows="6" placeholder="86, 3.5&#10;88, 3&#10;95, 1&#10;98, 0.5">86, 3.5
+88, 3
+95, 1
+98, 0.5</textarea>
+    <label>Reference period T (same time unit) — leave blank to use Σt
+      <input id="leq-T" type="number" step="any" placeholder="8"></label>
+    <button onclick="doLeq()">Compute L<sub>eq</sub></button>
+    <div id="leq-out" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>L<sub>eq</sub> from discrete events (e.g. train / vehicle pass-bys)</h3>
+    <p class="hint">One row per event type: <code>level, single-event duration, number of events</code>.
+       Set the reference period in the <em>same</em> time unit as the durations.</p>
+    <textarea id="evt-list" rows="5" placeholder="86, 12, 120&#10;79, 18, 200&#10;78, 24, 80">86, 12, 120
+79, 18, 200
+78, 24, 80</textarea>
+    <label>Reference period T
+      <input id="evt-T" type="number" value="86400" step="any"></label>
+    <span class="inline-hint">e.g. 24 h = 86400 s</span>
+    <button onclick="doEvents()">Compute L<sub>eq</sub></button>
+    <div id="evt-out" class="result"></div>
+    <p class="note">L<sub>eq,T</sub> = 10·log<sub>10</sub>( (1/T)·Σ N<sub>i</sub>·t<sub>i</sub>·10<sup>L<sub>i</sub>/10</sup> )</p>
+  </div>
+</section>
+
+<!-- ============================ DOSE ============================ -->
+<section class="tab" data-tab="dose">
+  <h2>Occupational Noise Dose &amp; Exposure Limits</h2>
+  <p class="desc">Australian OH&amp;S criterion: L<sub>Aeq,8h</sub> = 85 dB(A) with a 3 dB exchange rate.</p>
+
+  <div class="card">
+    <h3>Worker shift exposure</h3>
+    <p class="hint">One row per phase: <code>level dB(A), duration (h)</code>.</p>
+    <textarea id="dose-list" rows="5">86, 3.5
+88, 3
+95, 1
+98, 0.5</textarea>
+    <div class="row">
+      <label>Criterion level L<sub>c</sub> (dB(A)) <input id="dose-Lc" type="number" value="85" step="any"></label>
+      <label>Exchange rate q (dB) <input id="dose-q" type="number" value="3" step="any"></label>
+      <label>Criterion time T<sub>c</sub> (h) <input id="dose-Tc" type="number" value="8" step="any"></label>
+    </div>
+    <button onclick="doDose()">Assess exposure</button>
+    <div id="dose-out" class="result"></div>
+    <p class="note">Max permissible time at L<sub>Aeq</sub>: &nbsp;
+       T = T<sub>c</sub> / 2<sup>(L<sub>Aeq</sub> − L<sub>c</sub>)/q</sup> &nbsp;·&nbsp;
+       Dose = (Σt<sub>i</sub>/T<sub>i</sub>) where T<sub>i</sub> = T<sub>c</sub>/2<sup>(L<sub>i</sub>−L<sub>c</sub>)/q</sup></p>
+  </div>
+</section>
+
+<!-- ============================ LOUDNESS ============================ -->
+<section class="tab" data-tab="loud">
+  <h2>Loudness — Phons &amp; Sones</h2>
+  <p class="desc">The <strong>loudness level</strong> (phons) of a tone is read from the equal-loudness contour
+     passing through its frequency &amp; SPL. <strong>Loudness</strong> in sones converts from phons by
+     <span class="f">S = 2<sup>(L<sub>L</sub> − 40)/10</sup></span> (valid for L<sub>L</sub> ≥ 40 phon).</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Phons → Sones</h3>
+      <label>Loudness level L<sub>L</sub> (phons) <input id="ph2s" type="number" value="80" step="any"></label>
+      <button onclick="doPh2S()">Convert</button>
+      <div id="ph2s-out" class="result"></div>
+    </div>
+    <div class="card">
+      <h3>Sones → Phons</h3>
+      <label>Loudness S (sones) <input id="s2ph" type="number" value="16" step="any"></label>
+      <button onclick="doS2Ph()">Convert</button>
+      <div id="s2ph-out" class="result"></div>
+      <p class="note">L<sub>L</sub> = 40 + 10·log<sub>2</sub>(S)</p>
+    </div>
+  </div>
+  <div class="card info">
+    <h3>Reading the equal-loudness contours</h3>
+    <p>For a pure tone, find its frequency on the x-axis and its SPL on the y-axis; the phon value is the
+       label of the contour through that point. A 1 kHz tone has loudness level (phon) equal to its SPL (dB).
+       Example (Quiz 6): a 500 Hz tone at 76 dB lies on the <strong>80 phon</strong> contour ⇒
+       S = 2<sup>(80−40)/10</sup> = <strong>16 sones</strong>.</p>
+  </div>
+</section>
+
+<!-- ============================ SPEECH ============================ -->
+<section class="tab" data-tab="speech">
+  <h2>Speech Interference Level (PSIL) &amp; Communication</h2>
+  <p class="desc">Preferred Speech Interference Level = arithmetic mean of the octave-band SPLs centred at
+     500, 1000 and 2000 Hz: <span class="f">PSIL = (L<sub>500</sub> + L<sub>1000</sub> + L<sub>2000</sub>)/3</span>.</p>
+
+  <div class="card">
+    <h3>Compute PSIL &amp; voice effort</h3>
+    <div class="row">
+      <label>L at 500 Hz (dB) <input id="psil-500" type="number" value="76" step="any"></label>
+      <label>L at 1000 Hz (dB) <input id="psil-1000" type="number" step="any" placeholder="(blank = same)"></label>
+      <label>L at 2000 Hz (dB) <input id="psil-2000" type="number" step="any" placeholder="(blank = same)"></label>
+    </div>
+    <label>Talker–listener distance (m) <input id="psil-dist" type="number" value="1.5" step="any"></label>
+    <button onclick="doPSIL()">Compute</button>
+    <div id="psil-out" class="result"></div>
+    <p class="note">Voice-effort guidance from PSIL vs distance (just-reliable communication).</p>
+  </div>
+</section>
+
+<!-- ============================ STATS ============================ -->
+<section class="tab" data-tab="stats">
+  <h2>Statistical Levels &amp; SEL</h2>
+  <p class="desc">Percentile (L<sub>N</sub>) and single-event levels describe a fluctuating noise.</p>
+
+  <div class="card info">
+    <h3>What each term means (Quiz 6)</h3>
+    <ul>
+      <li><strong>L<sub>1</sub></strong> — exceeded 1 % of the time → close to the <em>maximum</em> level.</li>
+      <li><strong>L<sub>10</sub></strong> — exceeded 10 % → typical of intrusive/peak traffic noise.</li>
+      <li><strong>L<sub>90</sub></strong> — exceeded 90 % → the <em>background</em> level.</li>
+      <li><strong>L<sub>99</sub></strong> — exceeded 99 % → close to the <em>minimum</em> level.</li>
+      <li><strong>L<sub>eq</sub></strong> — energy-average; lies between L<sub>90</sub> and L<sub>1</sub>.</li>
+      <li><strong>SEL</strong> — Sound Exposure Level; energy of an event referenced to 1 s, so it is the
+        <em>largest</em> of the set.</li>
+    </ul>
+    <p class="note">Ordering (typical): L<sub>99</sub> &lt; L<sub>90</sub> &lt; L<sub>eq</sub> &lt; L<sub>10</sub> &lt; L<sub>1</sub> &lt; SEL.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>SEL ↔ L<sub>eq</sub></h3>
+      <label>L<sub>eq</sub> over the event (dB) <input id="sel-leq" type="number" value="84.4" step="any"></label>
+      <label>Event duration T (s) <input id="sel-T" type="number" value="60" step="any"></label>
+      <button onclick="doSEL()">Compute SEL</button>
+      <div id="sel-out" class="result"></div>
+      <p class="note">SEL = L<sub>eq</sub> + 10·log<sub>10</sub>(T / 1 s)</p>
+    </div>
+    <div class="card">
+      <h3>Sort values into terms</h3>
+      <p class="hint">Paste the measured values; they are assigned biggest→smallest as
+         SEL, L<sub>1</sub>, L<sub>eq</sub>, L<sub>99</sub>.</p>
+      <textarea id="sort-list" rows="4">93.5
+31.5
+84.4
+102.5</textarea>
+      <button onclick="doSort()">Assign</button>
+      <div id="sort-out" class="result"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ TABLE ============================ -->
+<section class="tab" data-tab="table">
+  <h2>Reference — A / B / C Weighting Network Values</h2>
+  <p class="desc">Relative response (dB) added to each band level. Source: standard ⅓-octave weighting table.</p>
+  <div id="ref-table"></div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
+</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
