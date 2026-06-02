@@ -15,6 +15,12 @@ Use the **search box** above the tabs — it filters tabs by keyword/tag as you 
 (e.g. `SPL`, `dB(A)`, `Leq`, `RT60`, `sones`, `mass law`, `Lw`, `K1`, `Ldn`).
 Press **Enter** to jump to the first match, **Esc** to clear.
 
+## Time units
+
+In the **Leq**, discrete-events and **Noise Dose** inputs, durations may carry a unit and be
+freely mixed: `96, 15 min` · `91, 2 h` · `99, 30 s`. A bare number uses the **default unit**
+selector on that card. The reference period T also accepts a unit (e.g. `8 h`, `480 min`, `24 h`).
+
 ## What it covers
 
 | Tab | Calculations | Source |
@@ -27,7 +33,7 @@ Press **Enter** to jump to the first match, **Esc** to clear.
 | **Room Acoustics** | Sabine T₆₀ (solve any term) · average absorption ᾱ · room constant R · room equation L<sub>p</sub>=L<sub>w</sub>+10log(Q/4πr²+4/R) | Unit 3–4 |
 | **Sound Power** | Background correction K₁ · environmental K₂ · L<sub>w</sub> from surface SPL | Unit 4 |
 | **Weighting** | A/B/C weighting of octave or ⅓-octave bands → dB(A)/dB(B)/dB(C) and linear total | Quiz 1 |
-| **Leq** | L<sub>eq</sub> from levels & durations (incl. meter periods) · from discrete events | Quiz 4, 5, 7, 8 |
+| **Leq** | L<sub>eq</sub> from levels & durations (incl. meter periods) · from discrete events · **mixed time units** (s/min/h) | Quiz 4, 5, 7, 8 |
 | **Noise Dose** | Worker shift L<sub>Aeq</sub>, dose %, OH&S limit check, max permissible time | Quiz 4 |
 | **Loudness** | Phons ↔ sones, equal-loudness-contour guidance | Quiz 6 |
 | **Speech (PSIL)** | Preferred Speech Interference Level + voice-effort guidance | Quiz 6 |

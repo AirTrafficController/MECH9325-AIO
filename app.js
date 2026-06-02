@@ -12,6 +12,37 @@ function parseRows(text) {
     .map(l => l.trim()).filter(l => l.length)
     .map(l => l.split(/[,\s]+/).map(Number));
 }
+
+// Seconds per time unit (accepts common spellings/abbreviations).
+const TIME_UNITS = {
+  s: 1, sec: 1, secs: 1, second: 1, seconds: 1,
+  m: 60, min: 60, mins: 60, minute: 60, minutes: 60,
+  h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600,
+};
+// Parse a duration string like "15 min", "2h", "30s" or bare "3.5" → seconds.
+// Bare numbers use defUnit ('h' | 'min' | 's').
+function parseTime(str, defUnit) {
+  const t = String(str).trim();
+  if (t === '') return NaN;
+  const mm = t.match(/^([0-9.eE+\-]+)\s*([a-zA-Z]*)$/);
+  if (!mm) return NaN;
+  const v = parseFloat(mm[1]);
+  if (isNaN(v)) return NaN;
+  const factor = TIME_UNITS[(mm[2] || defUnit).toLowerCase()];
+  return factor === undefined ? NaN : v * factor;
+}
+// Split "level, duration[, count]" rows, keeping the duration field as text.
+function parseLevelRows(text) {
+  return text.trim().split('\n')
+    .map(l => l.trim()).filter(l => l.length)
+    .map(l => l.split(',').map(s => s.trim()));
+}
+// Pretty-print seconds in a sensible unit.
+function fmtSeconds(sec) {
+  if (sec >= 3600) return `${fmt(sec / 3600, 3)} h`;
+  if (sec >= 60) return `${fmt(sec / 60, 3)} min`;
+  return `${fmt(sec, 3)} s`;
+}
 // Sum 10^(L/10) energy then back to dB.
 function dBsum(levels) {
   return 10 * lg(levels.reduce((a, L) => a + 10 ** (L / 10), 0));
@@ -215,48 +246,56 @@ function doWeight() {
 
 /* ---------------- Leq ---------------- */
 function doLeq() {
-  const rows = parseRows($('leq-list').value);
+  const def = $('leq-unit').value;
+  const rows = parseLevelRows($('leq-list').value);
   let energy = 0, sumT = 0, bad = false;
   rows.forEach(r => {
-    if (r.length < 2 || r.some(isNaN)) { bad = true; return; }
-    energy += r[1] * 10 ** (r[0] / 10); sumT += r[1];
+    const L = Number(r[0]), t = parseTime(r[1], def);
+    if (r.length < 2 || isNaN(L) || isNaN(t)) { bad = true; return; }
+    energy += t * 10 ** (L / 10); sumT += t;
   });
-  if (bad || !rows.length) return show('leq-out', 'Each row needs: level, duration.', 'err');
-  let T = Number($('leq-T').value);
-  if (!T || T <= 0) T = sumT;
+  if (bad || !rows.length) return show('leq-out',
+    'Each row needs: level, duration (e.g. <code>96, 15 min</code>).', 'err');
+  let T = parseTime($('leq-T').value, def);
+  if (isNaN(T) || T <= 0) T = sumT;
   const leq = 10 * lg(energy / T);
   show('leq-out',
     `L<sub>eq</sub> = <b>${fmt(leq, 3)} dB</b><br>
-     <span class="small">Σt = ${fmt(sumT)} · reference T = ${fmt(T)}</span>`);
+     <span class="small">Σt = ${fmtSeconds(sumT)} · reference T = ${fmtSeconds(T)}</span>`);
 }
 function doEvents() {
-  const rows = parseRows($('evt-list').value);
-  const T = Number($('evt-T').value);
+  const def = $('evt-unit').value;
+  const T = parseTime($('evt-T').value, def);
   if (!(T > 0)) return show('evt-out', 'Reference period T must be > 0.', 'err');
+  const rows = parseLevelRows($('evt-list').value);
   let energy = 0, bad = false;
   rows.forEach(r => {
-    if (r.length < 3 || r.some(isNaN)) { bad = true; return; }
-    energy += r[2] * r[1] * 10 ** (r[0] / 10);
+    const L = Number(r[0]), t = parseTime(r[1], def), n = Number(r[2]);
+    if (r.length < 3 || isNaN(L) || isNaN(t) || isNaN(n)) { bad = true; return; }
+    energy += n * t * 10 ** (L / 10);
   });
   if (bad || !rows.length) return show('evt-out',
     'Each row needs: level, single-event duration, number of events.', 'err');
   const leq = 10 * lg(energy / T);
-  show('evt-out', `L<sub>eq,T</sub> = <b>${fmt(leq, 3)} dB</b>`);
+  show('evt-out',
+    `L<sub>eq,T</sub> = <b>${fmt(leq, 3)} dB</b><br><span class="small">reference T = ${fmtSeconds(T)}</span>`);
 }
 
 /* ---------------- Noise dose ---------------- */
 function doDose() {
-  const rows = parseRows($('dose-list').value);
+  const def = $('dose-unit').value;
+  const rows = parseLevelRows($('dose-list').value);
   const Lc = Number($('dose-Lc').value), q = Number($('dose-q').value), Tc = Number($('dose-Tc').value);
   let energy = 0, sumT = 0, dose = 0, bad = false;
   rows.forEach(r => {
-    if (r.length < 2 || r.some(isNaN)) { bad = true; return; }
-    const L = r[0], t = r[1];
+    const L = Number(r[0]), t = parseTime(r[1], def) / 3600;   // hours
+    if (r.length < 2 || isNaN(L) || isNaN(t)) { bad = true; return; }
     energy += t * 10 ** (L / 10); sumT += t;
     const Ti = Tc / 2 ** ((L - Lc) / q);     // allowed time at level L
     dose += t / Ti;
   });
-  if (bad || !rows.length) return show('dose-out', 'Each row needs: level dB(A), duration h.', 'err');
+  if (bad || !rows.length) return show('dose-out',
+    'Each row needs: level dB(A), duration (e.g. <code>96, 15 min</code>).', 'err');
   const leq = 10 * lg(energy / Tc);            // normalised to criterion period
   const Tmax = Tc / 2 ** ((leq - Lc) / q);     // permissible time at this Leq
   const exceed = leq > Lc;

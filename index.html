@@ -376,16 +376,22 @@
 
   <div class="card">
     <h3>L<sub>eq</sub> from levels &amp; durations</h3>
-    <p class="hint">One row per noise component: <code>level, duration</code> (e.g. <code>86, 3.5</code>).
-       Duration is the total time at that level. <em>Units may be mixed</em> only if you convert them
-       first — keep all durations and T in the same unit. For sound-level-meter periods (e.g. 30–70 s),
-       enter the period <em>length</em> (40) as the duration.</p>
-    <textarea id="leq-list" rows="6" placeholder="86, 3.5&#10;88, 3&#10;95, 1&#10;98, 0.5">86, 3.5
-88, 3
-95, 1
-98, 0.5</textarea>
-    <label>Reference period T (same time unit) — leave blank to use Σt
-      <input id="leq-T" type="number" step="any" placeholder="8"></label>
+    <p class="hint">One row per noise component: <code>level, duration</code>. The duration may carry a unit
+       — <code>96, 15 min</code>, <code>91, 2 h</code>, <code>99, 30 s</code> — and units can be mixed
+       freely. A bare number (e.g. <code>3.5</code>) uses the default unit below. For sound-level-meter
+       periods (e.g. 30–70 s) enter the period <em>length</em> (<code>40 s</code>).</p>
+    <textarea id="leq-list" rows="6" placeholder="96, 15 min&#10;91, 2 h&#10;99, 6 min&#10;86, 2.5 h">96, 15 min
+91, 2 h
+99, 6 min
+86, 2.5 h</textarea>
+    <div class="row">
+      <label>Default unit for bare numbers
+        <select id="leq-unit">
+          <option value="h">hours</option><option value="min">minutes</option><option value="s">seconds</option>
+        </select></label>
+      <label>Reference period T — leave blank to use Σt
+        <input id="leq-T" type="text" placeholder="e.g. 8 h, 480 min, blank = Σt"></label>
+    </div>
     <button onclick="doLeq()">Compute L<sub>eq</sub></button>
     <div id="leq-out" class="result"></div>
   </div>
@@ -394,12 +400,17 @@
     <h3>L<sub>eq</sub> from discrete events (e.g. train / vehicle pass-bys)</h3>
     <p class="hint">One row per event type: <code>level, single-event duration, number of events</code>.
        Set the reference period in the <em>same</em> time unit as the durations.</p>
-    <textarea id="evt-list" rows="5" placeholder="86, 12, 120&#10;79, 18, 200&#10;78, 24, 80">86, 12, 120
-79, 18, 200
-78, 24, 80</textarea>
-    <label>Reference period T
-      <input id="evt-T" type="number" value="86400" step="any"></label>
-    <span class="inline-hint">e.g. 24 h = 86400 s</span>
+    <textarea id="evt-list" rows="5" placeholder="86, 12 s, 120&#10;79, 18 s, 200&#10;78, 24 s, 80">86, 12 s, 120
+79, 18 s, 200
+78, 24 s, 80</textarea>
+    <div class="row">
+      <label>Default unit for bare numbers
+        <select id="evt-unit">
+          <option value="s">seconds</option><option value="min">minutes</option><option value="h">hours</option>
+        </select></label>
+      <label>Reference period T
+        <input id="evt-T" type="text" value="24 h"></label>
+    </div>
     <button onclick="doEvents()">Compute L<sub>eq</sub></button>
     <div id="evt-out" class="result"></div>
     <p class="note">L<sub>eq,T</sub> = 10·log<sub>10</sub>( (1/T)·Σ N<sub>i</sub>·t<sub>i</sub>·10<sup>L<sub>i</sub>/10</sup> )</p>
@@ -413,12 +424,17 @@
 
   <div class="card">
     <h3>Worker shift exposure</h3>
-    <p class="hint">One row per phase: <code>level dB(A), duration (h)</code>.</p>
-    <textarea id="dose-list" rows="5">86, 3.5
-88, 3
-95, 1
-98, 0.5</textarea>
+    <p class="hint">One row per phase: <code>level dB(A), duration</code>. Durations may carry a unit
+       (<code>96, 15 min</code>, <code>91, 2 h</code>) and may be mixed; bare numbers use the default unit.</p>
+    <textarea id="dose-list" rows="5">96, 15 min
+91, 2 h
+99, 6 min
+86, 2.5 h</textarea>
     <div class="row">
+      <label>Default unit for bare numbers
+        <select id="dose-unit">
+          <option value="h">hours</option><option value="min">minutes</option><option value="s">seconds</option>
+        </select></label>
       <label>Criterion level L<sub>c</sub> (dB(A)) <input id="dose-Lc" type="number" value="85" step="any"></label>
       <label>Exchange rate q (dB) <input id="dose-q" type="number" value="3" step="any"></label>
       <label>Criterion time T<sub>c</sub> (h) <input id="dose-Tc" type="number" value="8" step="any"></label>
