@@ -308,6 +308,19 @@ function doDose() {
     exceed ? 'warn' : 'ok');
 }
 
+function doMaxTime() {
+  const L = Number($('mpt-L').value), Lc = Number($('mpt-Lc').value),
+        q = Number($('mpt-q').value), Tc = Number($('mpt-Tc').value);
+  if (!(q > 0) || !(Tc > 0)) return show('mpt-out', 'q and Tc must be > 0.', 'err');
+  const T = Tc / 2 ** ((L - Lc) / q);
+  const exceed = L > Lc;
+  show('mpt-out',
+    `T = <b>${fmt(T, 4)} h</b> &nbsp;(= ${fmt(T * 60, 1)} min)<br>
+     <span class="small">= ${fmt(Tc)} / 2^((${fmt(L)}−${fmt(Lc)})/${fmt(q)})</span><br>
+     Level ${exceed ? 'exceeds' : 'is within'} the ${fmt(Lc)} dB(A) criterion.`,
+    exceed ? 'warn' : 'ok');
+}
+
 /* ---------------- Loudness ---------------- */
 function doPh2S() {
   const p = Number($('ph2s').value);

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
 <header>
@@ -445,6 +445,20 @@
        T = T<sub>c</sub> / 2<sup>(L<sub>Aeq</sub> − L<sub>c</sub>)/q</sup> &nbsp;·&nbsp;
        Dose = (Σt<sub>i</sub>/T<sub>i</sub>) where T<sub>i</sub> = T<sub>c</sub>/2<sup>(L<sub>i</sub>−L<sub>c</sub>)/q</sup></p>
   </div>
+
+  <div class="card">
+    <h3>Max permissible time for a steady level</h3>
+    <p class="hint">For exposure to one continuous noise level — no table needed.</p>
+    <div class="row">
+      <label>Noise level L (dB(A)) <input id="mpt-L" type="number" value="89" step="any"></label>
+      <label>Criterion level L<sub>c</sub> (dB(A)) <input id="mpt-Lc" type="number" value="85" step="any"></label>
+      <label>Exchange rate q (dB) <input id="mpt-q" type="number" value="3" step="any"></label>
+      <label>Criterion time T<sub>c</sub> (h) <input id="mpt-Tc" type="number" value="8" step="any"></label>
+    </div>
+    <button onclick="doMaxTime()">Compute T</button>
+    <div id="mpt-out" class="result"></div>
+    <p class="note">T = T<sub>c</sub> / 2<sup>(L − L<sub>c</sub>)/q</sup></p>
+  </div>
 </section>
 
 <!-- ============================ LOUDNESS ============================ -->
@@ -665,7 +679,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="data.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
