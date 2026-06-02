@@ -9,6 +9,12 @@ course Moodle quizzes **and the full lecture-note formula set (Units 1–8)**.
 - Double-click `index.html`, **or**
 - Serve the folder: `python3 -m http.server` then visit <http://localhost:8000>
 
+## Find a calculator fast
+
+Use the **search box** above the tabs — it filters tabs by keyword/tag as you type
+(e.g. `SPL`, `dB(A)`, `Leq`, `RT60`, `sones`, `mass law`, `Lw`, `K1`, `Ldn`).
+Press **Enter** to jump to the first match, **Esc** to clear.
+
 ## What it covers
 
 | Tab | Calculations | Source |

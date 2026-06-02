@@ -31,6 +31,27 @@ const TABS = [
   ['community', 'Community'], ['stats', 'Stats / SEL'], ['tl', 'Insulation (TL)'],
   ['muffler', 'Mufflers'], ['table', 'Tables'],
 ];
+// Search keywords/tags per tab (lowercase). Matched against the typed query.
+const TAB_TAGS = {
+  levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts',
+  combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder',
+  subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
+  waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave',
+  dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor',
+  room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure',
+  power: 'sound power measurement lw k1 k2 background correction environmental hemisphere surface area reference source mean spl',
+  weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
+  leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq',
+  dose: 'noise dose ohs oh&s occupational exposure limit 85 db permissible time exchange rate hearing shift worker percent percentage criterion',
+  loud: 'loudness phon phons sone sones equal loudness contour conversion subjective hearing',
+  speech: 'speech psil sil interference voice effort communication distance talker listener 500 1000 2000 articulation',
+  community: 'community noise day night ldn lden penalty environmental planning residential',
+  stats: 'statistical levels percentile l1 l10 l90 l99 background sel sound exposure level single event ordering max min sort',
+  tl: 'insulation transmission loss tl mass law partition wall surface mass impedance ratio interface reflection transmission coefficient alpha t alpha r panel resonance critical frequency sound reduction',
+  muffler: 'muffler silencer pipe transmission loss insertion loss noise reduction il nr area change expansion chamber side branch reactive duct exhaust',
+  table: 'tables reference a b c weighting values chart lookup data',
+};
+
 function initTabs() {
   const nav = $('tabs');
   TABS.forEach(([id, label], i) => {
@@ -47,6 +68,37 @@ function selectTab(id) {
     s.classList.toggle('active', s.dataset.tab === id));
   document.querySelectorAll('#tabs button').forEach(b =>
     b.classList.toggle('sel', b.dataset.for === id));
+}
+
+/* ---------------- Tab search / tag filter ---------------- */
+function initSearch() {
+  const box = $('tab-search'), info = $('search-info');
+  if (!box) return;
+  const apply = () => {
+    const q = box.value.trim().toLowerCase();
+    let shown = 0, firstId = null;
+    document.querySelectorAll('#tabs button').forEach(b => {
+      const id = b.dataset.for;
+      const hay = (b.textContent + ' ' + (TAB_TAGS[id] || '')).toLowerCase();
+      // Multi-word queries: substring match. Single word: match any token's prefix
+      // (so "rev"→reverberation, but "spl" won't hit "displacement").
+      const hit = q === '' ||
+        (q.includes(' ') ? hay.includes(q) : hay.split(/[^a-z0-9]+/).some(t => t.startsWith(q)));
+      b.style.display = hit ? '' : 'none';
+      b.classList.toggle('match', q !== '' && hit);
+      if (hit) { shown++; if (!firstId) firstId = id; }
+    });
+    if (q === '') info.textContent = '';
+    else if (shown === 0) info.innerHTML = '<span class="nomatch">no calculator matches — try “SPL”, “Leq”, “RT60”, “TL”…</span>';
+    else info.textContent = `${shown} match${shown > 1 ? 'es' : ''}`;
+    box._first = firstId;
+  };
+  box.addEventListener('input', apply);
+  box.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && box._first) { selectTab(box._first); }
+    if (e.key === 'Escape') { box.value = ''; apply(); }
+  });
+  apply();
 }
 
 /* ---------------- Combine ---------------- */
@@ -505,6 +557,7 @@ function buildRefTable() {
 /* ---------------- init ---------------- */
 window.addEventListener('DOMContentLoaded', () => {
   initTabs();
+  initSearch();
   buildWeightTable();
   buildRefTable();
 });
