@@ -57,6 +57,11 @@ button:hover{filter:brightness(1.08)}
 .result.err{border-color:var(--bad);color:#ffd1d1}
 .result.warn{border-color:var(--warn)}
 .result b{color:var(--accent2)}
+.work{margin-top:12px;border-top:1px dashed var(--line);padding-top:8px}
+.work-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+.work-l{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem;line-height:1.7;
+  color:var(--ink);padding:1px 0;overflow-x:auto;white-space:nowrap}
+.work-l b{color:var(--accent2)}
 .result .big{font-size:1.15rem;margin-top:10px}
 .result .bad{color:var(--bad)} .result .good{color:var(--good)}
 

@@ -43,6 +43,19 @@ function fmtSeconds(sec) {
   if (sec >= 60) return `${fmt(sec / 60, 3)} min`;
   return `${fmt(sec, 3)} s`;
 }
+
+// Render a step-by-step "Working" block from an array of HTML lines.
+function work(steps) {
+  return `<div class="work"><div class="work-h">Working</div>` +
+    steps.map(s => `<div class="work-l">${s}</div>`).join('') + `</div>`;
+}
+// Energy term 10^(L/10) as a tidy number.
+const e10 = L => 10 ** (L / 10);
+// Compact number for working lines.
+const sci = (x, d = 4) => {
+  if (x !== 0 && (Math.abs(x) >= 1e5 || Math.abs(x) < 1e-3)) return x.toExponential(d - 1);
+  return (+x.toPrecision(d)).toString();
+};
 // Sum 10^(L/10) energy then back to dB.
 function dBsum(levels) {
   return 10 * lg(levels.reduce((a, L) => a + 10 ** (L / 10), 0));
@@ -137,18 +150,29 @@ function doCombine() {
   const levels = $('combine-list').value.trim().split('\n')
     .map(s => Number(s.trim())).filter(s => !isNaN(s));
   if (!levels.length) return show('combine-out', 'Enter at least one level.', 'err');
-  const tot = dBsum(levels);
+  const energies = levels.map(e10), sum = energies.reduce((a, b) => a + b, 0), tot = 10 * lg(sum);
   show('combine-out',
-    `Combined level = <b>${fmt(tot)} dB</b><br>
-     <span class="small">${levels.length} levels combined on an energy basis.</span>`);
+    `Combined level = <b>${fmt(tot)} dB</b>` +
+    work([
+      `L_tot = 10·log₁₀( Σ 10^(Lᵢ/10) )`,
+      `= 10·log₁₀( ${levels.map(L => `10^(${fmt(L)}/10)`).join(' + ')} )`,
+      `= 10·log₁₀( ${energies.map(x => sci(x)).join(' + ')} )`,
+      `= 10·log₁₀( ${sci(sum, 5)} )`,
+      `= <b>${fmt(tot)} dB</b>`,
+    ]));
 }
 function doIdentical() {
   const L = Number($('ident-L').value), N = Number($('ident-N').value);
   if (!(N >= 1)) return show('ident-out', 'N must be ≥ 1.', 'err');
   const tot = L + 10 * lg(N);
   show('ident-out',
-    `Total of ${N} sources = <b>${fmt(tot)} dB</b><br>
-     <span class="small">= ${fmt(L)} + 10·log₁₀(${N}) = ${fmt(L)} + ${fmt(10 * lg(N))} dB</span>`);
+    `Total of ${N} sources = <b>${fmt(tot)} dB</b>` +
+    work([
+      `L_tot = L₁ + 10·log₁₀(N)`,
+      `= ${fmt(L)} + 10·log₁₀(${N})`,
+      `= ${fmt(L)} + ${fmt(10 * lg(N))}`,
+      `= <b>${fmt(tot)} dB</b>`,
+    ]));
 }
 function doIncrease() {
   const n1 = Number($('inc-n1').value), L1 = Number($('inc-L1').value),
@@ -156,28 +180,44 @@ function doIncrease() {
   if (!(n1 > 0) || !(n2 > 0)) return show('inc-out', 'Counts must be positive.', 'err');
   const dL = 10 * lg(n2 / n1), nl = L1 + dL;
   show('inc-out',
-    `N₂ = ${n2}<br>
-     Increase ΔL = <b>${fmt(dL, 3)} dB</b><br>
-     New total level = <b>${fmt(nl, 3)} dB</b><br>
-     <span class="small">ΔL = 10·log₁₀(${n2}/${n1})</span>`);
+    `Increase ΔL = <b>${fmt(dL, 3)} dB</b> · New level = <b>${fmt(nl, 3)} dB</b>` +
+    work([
+      `N₂ = N₁ + added = ${n1} + ${add} = ${n2}`,
+      `ΔL = 10·log₁₀(N₂/N₁) = 10·log₁₀(${n2}/${n1})`,
+      `= 10·log₁₀(${fmt(n2 / n1, 4)}) = <b>${fmt(dL, 3)} dB</b>`,
+      `L_new = L₁ + ΔL = ${fmt(L1)} + ${fmt(dL, 3)} = <b>${fmt(nl, 3)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Subtract ---------------- */
 function doSubtract() {
   const tot = Number($('sub-tot').value), bg = Number($('sub-bg').value);
-  const diff = 10 ** (tot / 10) - 10 ** (bg / 10);
+  const diff = e10(tot) - e10(bg);
   if (diff <= 0) return show('sub-out',
     'Total must exceed the level being removed (the source cannot have negative energy).', 'err');
   const rem = 10 * lg(diff);
-  show('sub-out', `Remaining level = <b>${fmt(rem)} dB</b>`);
+  show('sub-out',
+    `Remaining level = <b>${fmt(rem)} dB</b>` +
+    work([
+      `L_rem = 10·log₁₀( 10^(L_tot/10) − 10^(L_bg/10) )`,
+      `= 10·log₁₀( 10^(${fmt(tot)}/10) − 10^(${fmt(bg)}/10) )`,
+      `= 10·log₁₀( ${sci(e10(tot))} − ${sci(e10(bg))} )`,
+      `= 10·log₁₀( ${sci(diff)} )`,
+      `= <b>${fmt(rem)} dB</b>`,
+    ]));
 }
 function doOneOfN() {
   const tot = Number($('one-tot').value), N = Number($('one-N').value);
   if (!(N >= 1)) return show('one-out', 'N must be ≥ 1.', 'err');
   const one = tot - 10 * lg(N);
   show('one-out',
-    `Each source = <b>${fmt(one)} dB</b><br>
-     <span class="small">= ${fmt(tot)} − 10·log₁₀(${N})</span>`);
+    `Each source = <b>${fmt(one)} dB</b>` +
+    work([
+      `L₁ = L_tot − 10·log₁₀(N)`,
+      `= ${fmt(tot)} − 10·log₁₀(${N})`,
+      `= ${fmt(tot)} − ${fmt(10 * lg(N))}`,
+      `= <b>${fmt(one)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Distance / spreading ---------------- */
@@ -192,8 +232,12 @@ function doDistance() {
        <tr><th>Source type</th><th>Spreading</th><th>L₂ at ${fmt(r2)} m</th></tr>
        <tr><td>Point (isolated vehicle)</td><td>−6 dB/doubling</td><td><b>${fmt(pt)} dB</b></td></tr>
        <tr><td>Line (continuous traffic)</td><td>−3 dB/doubling</td><td><b>${fmt(ln)} dB</b></td></tr>
-     </table>
-     <span class="small">From ${fmt(L1)} dB at ${fmt(r1)} m · 10·log₁₀(r₂/r₁) = ${fmt(10 * ratio)} dB</span>`);
+     </table>` +
+    work([
+      `log₁₀(r₂/r₁) = log₁₀(${fmt(r2)}/${fmt(r1)}) = ${fmt(ratio, 4)}`,
+      `Point: L₂ = L₁ − 20·log₁₀(r₂/r₁) = ${fmt(L1)} − 20·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(20 * ratio)} = <b>${fmt(pt)} dB</b>`,
+      `Line:  L₂ = L₁ − 10·log₁₀(r₂/r₁) = ${fmt(L1)} − 10·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(10 * ratio)} = <b>${fmt(ln)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Weighting ---------------- */
@@ -241,7 +285,13 @@ function doWeight() {
   show('w-out',
     `${t}
      <div class="big">Overall: <b>${fmt(wtd, 1)} ${tag}</b></div>
-     <span class="small">Linear (unweighted) total = ${fmt(lin, 1)} dB</span>`);
+     <span class="small">Linear (unweighted) total = ${fmt(lin, 1)} dB</span>` +
+    work([
+      `L_W = 10·log₁₀( Σ 10^((Lᵢ + Wᵢ)/10) )`,
+      `= 10·log₁₀( ${rows.map(r => `10^(${fmt(r.Lw)}/10)`).join(' + ')} )`,
+      `= 10·log₁₀( ${sci(rows.reduce((a, r) => a + e10(r.Lw), 0), 5)} )`,
+      `= <b>${fmt(wtd, 1)} ${tag}</b>`,
+    ]));
 }
 
 /* ---------------- Leq ---------------- */
@@ -259,9 +309,18 @@ function doLeq() {
   let T = parseTime($('leq-T').value, def);
   if (isNaN(T) || T <= 0) T = sumT;
   const leq = 10 * lg(energy / T);
+  // Build working using the original time unit for readability.
+  const uf = TIME_UNITS[def];
+  const terms = rows.map(r => `${fmt(parseTime(r[1], def) / uf, 3)}·10^(${fmt(Number(r[0]))}/10)`);
   show('leq-out',
-    `L<sub>eq</sub> = <b>${fmt(leq, 3)} dB</b><br>
-     <span class="small">Σt = ${fmtSeconds(sumT)} · reference T = ${fmtSeconds(T)}</span>`);
+    `L<sub>eq</sub> = <b>${fmt(leq, 3)} dB</b> &nbsp;<span class="small">(Σt = ${fmtSeconds(sumT)}, T = ${fmtSeconds(T)})</span>` +
+    work([
+      `L_eq = 10·log₁₀( (1/T)·Σ tᵢ·10^(Lᵢ/10) )   [times in ${def}]`,
+      `= 10·log₁₀( (1/${fmt(T / uf, 3)})·( ${terms.join(' + ')} ) )`,
+      `= 10·log₁₀( (1/${fmt(T / uf, 3)})·( ${sci(energy / uf, 5)} ) )`,
+      `= 10·log₁₀( ${sci(energy / T, 5)} )`,
+      `= <b>${fmt(leq, 3)} dB</b>`,
+    ]));
 }
 function doEvents() {
   const def = $('evt-unit').value;
@@ -277,8 +336,16 @@ function doEvents() {
   if (bad || !rows.length) return show('evt-out',
     'Each row needs: level, single-event duration, number of events.', 'err');
   const leq = 10 * lg(energy / T);
+  const terms = rows.map(r => `${fmt(Number(r[2]))}·${fmt(parseTime(r[1], def))}·10^(${fmt(Number(r[0]))}/10)`);
   show('evt-out',
-    `L<sub>eq,T</sub> = <b>${fmt(leq, 3)} dB</b><br><span class="small">reference T = ${fmtSeconds(T)}</span>`);
+    `L<sub>eq,T</sub> = <b>${fmt(leq, 3)} dB</b> &nbsp;<span class="small">(T = ${fmtSeconds(T)})</span>` +
+    work([
+      `L_eq = 10·log₁₀( (1/T)·Σ Nᵢ·tᵢ·10^(Lᵢ/10) )   [seconds]`,
+      `= 10·log₁₀( (1/${fmt(T)})·( ${terms.join(' + ')} ) )`,
+      `= 10·log₁₀( (1/${fmt(T)})·( ${sci(energy, 5)} ) )`,
+      `= 10·log₁₀( ${sci(energy / T, 5)} )`,
+      `= <b>${fmt(leq, 3)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Noise dose ---------------- */
@@ -299,12 +366,25 @@ function doDose() {
   const leq = 10 * lg(energy / Tc);            // normalised to criterion period
   const Tmax = Tc / 2 ** ((leq - Lc) / q);     // permissible time at this Leq
   const exceed = leq > Lc;
+  const eterms = rows.map(r => `${fmt(parseTime(r[1], def) / 3600, 3)}·10^(${fmt(Number(r[0]))}/10)`);
+  const dterms = rows.map(r => {
+    const L = Number(r[0]), t = parseTime(r[1], def) / 3600, Ti = Tc / 2 ** ((L - Lc) / q);
+    return `${fmt(t, 3)}/${fmt(Ti, 3)}`;
+  });
   show('dose-out',
     `L<sub>Aeq,${fmt(Tc)}h</sub> = <b>${fmt(leq, 3)} dB(A)</b><br>
      Total exposure time = ${fmt(sumT)} h<br>
      Noise dose = <b>${fmt(dose * 100, 1)} %</b> &nbsp;(100 % = limit)<br>
      Exceeds ${fmt(Lc)} dB(A) limit? <b class="${exceed ? 'bad' : 'good'}">${exceed ? 'YES' : 'No'}</b><br>
-     Max permissible time at this L<sub>Aeq</sub> = <b>${fmt(Tmax, 4)} h</b>`,
+     Max permissible time at this L<sub>Aeq</sub> = <b>${fmt(Tmax, 4)} h</b>` +
+    work([
+      `L_Aeq,${fmt(Tc)}h = 10·log₁₀( (1/T_c)·Σ tᵢ·10^(Lᵢ/10) )   [hours]`,
+      `= 10·log₁₀( (1/${fmt(Tc)})·( ${eterms.join(' + ')} ) )`,
+      `= 10·log₁₀( ${sci(energy / Tc, 5)} ) = <b>${fmt(leq, 3)} dB(A)</b>`,
+      `Allowed time Tᵢ = T_c / 2^((Lᵢ−${fmt(Lc)})/${fmt(q)})`,
+      `Dose = Σ tᵢ/Tᵢ = ${dterms.join(' + ')} = ${fmt(dose, 4)} = <b>${fmt(dose * 100, 1)} %</b>`,
+      `T_max = T_c / 2^((L_Aeq−L_c)/q) = ${fmt(Tc)} / 2^((${fmt(leq, 2)}−${fmt(Lc)})/${fmt(q)}) = <b>${fmt(Tmax, 4)} h</b>`,
+    ]),
     exceed ? 'warn' : 'ok');
 }
 
@@ -315,9 +395,14 @@ function doMaxTime() {
   const T = Tc / 2 ** ((L - Lc) / q);
   const exceed = L > Lc;
   show('mpt-out',
-    `T = <b>${fmt(T, 4)} h</b> &nbsp;(= ${fmt(T * 60, 1)} min)<br>
-     <span class="small">= ${fmt(Tc)} / 2^((${fmt(L)}−${fmt(Lc)})/${fmt(q)})</span><br>
-     Level ${exceed ? 'exceeds' : 'is within'} the ${fmt(Lc)} dB(A) criterion.`,
+    `T = <b>${fmt(T, 4)} h</b> &nbsp;(= ${fmt(T * 60, 1)} min) — level ${exceed ? 'exceeds' : 'is within'} the ${fmt(Lc)} dB(A) criterion.` +
+    work([
+      `T = T_c / 2^((L − L_c)/q)`,
+      `= ${fmt(Tc)} / 2^((${fmt(L)} − ${fmt(Lc)})/${fmt(q)})`,
+      `= ${fmt(Tc)} / 2^(${fmt((L - Lc) / q, 4)})`,
+      `= ${fmt(Tc)} / ${fmt(2 ** ((L - Lc) / q), 4)}`,
+      `= <b>${fmt(T, 4)} h</b>`,
+    ]),
     exceed ? 'warn' : 'ok');
 }
 
@@ -327,13 +412,25 @@ function doPh2S() {
   const s = 2 ** ((p - 40) / 10);
   show('ph2s-out',
     `Loudness = <b>${fmt(s, 3)} sones</b>` +
-    (p < 40 ? '<br><span class="small">Note: formula assumes L<sub>L</sub> ≥ 40 phon.</span>' : ''));
+    (p < 40 ? '<br><span class="small">Note: formula assumes L<sub>L</sub> ≥ 40 phon.</span>' : '') +
+    work([
+      `S = 2^((L_L − 40)/10)`,
+      `= 2^((${fmt(p)} − 40)/10)`,
+      `= 2^(${fmt((p - 40) / 10, 3)})`,
+      `= <b>${fmt(s, 3)} sones</b>`,
+    ]));
 }
 function doS2Ph() {
   const s = Number($('s2ph').value);
   if (!(s > 0)) return show('s2ph-out', 'Sones must be > 0.', 'err');
   const p = 40 + 10 * Math.log2(s);
-  show('s2ph-out', `Loudness level = <b>${fmt(p, 2)} phons</b>`);
+  show('s2ph-out', `Loudness level = <b>${fmt(p, 2)} phons</b>` +
+    work([
+      `L_L = 40 + 10·log₂(S)`,
+      `= 40 + 10·log₂(${fmt(s)})`,
+      `= 40 + ${fmt(10 * Math.log2(s), 3)}`,
+      `= <b>${fmt(p, 2)} phons</b>`,
+    ]));
 }
 
 /* ---------------- PSIL ---------------- */
@@ -345,9 +442,13 @@ function doPSIL() {
   const psil = (a + b + c) / 3;
   const effort = voiceEffort(psil, dist);
   show('psil-out',
-    `PSIL = <b>${fmt(psil, 2)} dB</b><br>
-     At ${fmt(dist)} m, voice effort must be: <b>${effort}</b><br>
-     <span class="small">Mean of L₅₀₀=${fmt(a)}, L₁₀₀₀=${fmt(b)}, L₂₀₀₀=${fmt(c)}</span>`);
+    `PSIL = <b>${fmt(psil, 2)} dB</b> · at ${fmt(dist)} m voice effort: <b>${effort}</b>` +
+    work([
+      `PSIL = (L₅₀₀ + L₁₀₀₀ + L₂₀₀₀) / 3`,
+      `= (${fmt(a)} + ${fmt(b)} + ${fmt(c)}) / 3`,
+      `= ${fmt(a + b + c)} / 3`,
+      `= <b>${fmt(psil, 2)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Stats / SEL ---------------- */
@@ -356,8 +457,13 @@ function doSEL() {
   if (!(T > 0)) return show('sel-out', 'T must be > 0.', 'err');
   const sel = leq + 10 * lg(T);
   show('sel-out',
-    `SEL = <b>${fmt(sel, 2)} dB</b><br>
-     <span class="small">= ${fmt(leq)} + 10·log₁₀(${fmt(T)})</span>`);
+    `SEL = <b>${fmt(sel, 2)} dB</b>` +
+    work([
+      `SEL = L_eq + 10·log₁₀(T / 1 s)`,
+      `= ${fmt(leq)} + 10·log₁₀(${fmt(T)})`,
+      `= ${fmt(leq)} + ${fmt(10 * lg(T), 3)}`,
+      `= <b>${fmt(sel, 2)} dB</b>`,
+    ]));
 }
 function doSort() {
   const vals = $('sort-list').value.trim().split('\n')
@@ -382,41 +488,73 @@ function doSPL() {
     if (!(p > 0)) return show('lp-out', 'Pressure must be > 0.', 'err');
     const Lp = 20 * lg(p / P_REF);
     $('lp-val').value = fmt(Lp, 2);
-    return show('lp-out', `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b> &nbsp;(from p = ${p} Pa)`);
+    return show('lp-out', `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b>` +
+      work([
+        `L_p = 20·log₁₀(p / p_ref)`,
+        `= 20·log₁₀(${sci(p)} / 2×10⁻⁵)`,
+        `= 20·log₁₀(${sci(p / P_REF)})`,
+        `= <b>${fmt(Lp, 2)} dB</b>`,
+      ]));
   }
   const Lp = Number($('lp-val').value), p = P_REF * 10 ** (Lp / 20);
   $('lp-p').value = p.toPrecision(4);
-  show('lp-out', `p<sub>rms</sub> = <b>${p.toPrecision(4)} Pa</b> &nbsp;(from L<sub>p</sub> = ${Lp} dB)`);
+  show('lp-out', `p<sub>rms</sub> = <b>${p.toPrecision(4)} Pa</b>` +
+    work([
+      `p = p_ref · 10^(L_p/20)`,
+      `= 2×10⁻⁵ · 10^(${fmt(Lp)}/20)`,
+      `= 2×10⁻⁵ · ${sci(10 ** (Lp / 20))}`,
+      `= <b>${p.toPrecision(4)} Pa</b>`,
+    ]));
 }
 function doLw() {
   if (!blank('lw-L')) {
     const L = Number($('lw-L').value), W = W_REF * 10 ** (L / 10);
     $('lw-W').value = W.toPrecision(4);
-    return show('lw-out', `W = <b>${W.toPrecision(4)} W</b>`);
+    return show('lw-out', `W = <b>${W.toPrecision(4)} W</b>` +
+      work([`W = W_ref · 10^(L_w/10) = 10⁻¹² · 10^(${fmt(L)}/10) = <b>${W.toPrecision(4)} W</b>`]));
   }
   const W = Number($('lw-W').value);
   if (!(W > 0)) return show('lw-out', 'Power must be > 0.', 'err');
   const L = 10 * lg(W / W_REF);
   $('lw-L').value = fmt(L, 2);
-  show('lw-out', `L<sub>w</sub> = <b>${fmt(L, 2)} dB</b>`);
+  show('lw-out', `L<sub>w</sub> = <b>${fmt(L, 2)} dB</b>` +
+    work([
+      `L_w = 10·log₁₀(W / W_ref)`,
+      `= 10·log₁₀(${sci(W)} / 10⁻¹²)`,
+      `= 10·log₁₀(${sci(W / W_REF)})`,
+      `= <b>${fmt(L, 2)} dB</b>`,
+    ]));
 }
 function doLI() {
-  let I;
-  if (!blank('li-p')) { const p = Number($('li-p').value); I = p * p / RHO_C; }
-  else I = Number($('li-I').value);
+  let I, steps = [];
+  if (!blank('li-p')) {
+    const p = Number($('li-p').value); I = p * p / RHO_C;
+    steps.push(`I = p_rms² / ρc = ${sci(p)}² / ${RHO_C} = ${sci(I)} W/m²`);
+  } else I = Number($('li-I').value);
   if (!(I > 0)) return show('li-out', 'Enter intensity or pressure.', 'err');
   const LI = 10 * lg(I / I_REF);
-  show('li-out', `I = <b>${I.toPrecision(4)} W/m²</b><br>L<sub>I</sub> = <b>${fmt(LI, 2)} dB</b>`);
+  steps.push(`L_I = 10·log₁₀(I / I_ref) = 10·log₁₀(${sci(I)} / 10⁻¹²) = <b>${fmt(LI, 2)} dB</b>`);
+  show('li-out', `I = <b>${I.toPrecision(4)} W/m²</b> · L<sub>I</sub> = <b>${fmt(LI, 2)} dB</b>` + work(steps));
 }
 function doRMS() {
   const P = Number($('rms-P').value), p = P / Math.SQRT2;
-  show('rms-out', `p<sub>rms</sub> = <b>${p.toPrecision(4)} Pa</b> &nbsp;→ SPL = ${fmt(20 * lg(p / P_REF), 2)} dB`);
+  show('rms-out', `p<sub>rms</sub> = <b>${p.toPrecision(4)} Pa</b>` +
+    work([
+      `p_rms = P / √2 = ${sci(P)} / 1.4142 = <b>${p.toPrecision(4)} Pa</b>`,
+      `SPL = 20·log₁₀(p_rms/p_ref) = <b>${fmt(20 * lg(p / P_REF), 2)} dB</b>`,
+    ]));
 }
 function doRMScombine() {
   const ps = $('rms-list').value.trim().split('\n').map(s => Number(s.trim())).filter(s => !isNaN(s));
   if (!ps.length) return show('rmsc-out', 'Enter at least one pressure.', 'err');
-  const tot = Math.sqrt(ps.reduce((a, p) => a + p * p, 0));
-  show('rmsc-out', `p<sub>tot</sub> = <b>${tot.toPrecision(4)} Pa</b> &nbsp;→ SPL = <b>${fmt(20 * lg(tot / P_REF), 2)} dB</b>`);
+  const sumSq = ps.reduce((a, p) => a + p * p, 0), tot = Math.sqrt(sumSq);
+  show('rmsc-out', `p<sub>tot</sub> = <b>${tot.toPrecision(4)} Pa</b> → SPL = <b>${fmt(20 * lg(tot / P_REF), 2)} dB</b>` +
+    work([
+      `p_tot = √( Σ pᵢ² )`,
+      `= √( ${ps.map(p => `${sci(p)}²`).join(' + ')} )`,
+      `= √( ${sci(sumSq)} )`,
+      `= <b>${tot.toPrecision(4)} Pa</b>`,
+    ]));
 }
 
 /* ---------------- Waves ---------------- */
@@ -470,7 +608,14 @@ function doLwLp() {
   const map = { pf: [20, 11], pg: [20, 8], lf: [10, 8], lg: [10, 5] };
   const [coef, k] = map[t];
   const Lp = Lw - coef * lg(r) - k;
-  show('lwlp-out', `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b> &nbsp;<span class="small">= ${Lw} − ${coef}·log₁₀(${r}) − ${k}</span>`);
+  show('lwlp-out',
+    `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b>` +
+    work([
+      `L_p = L_w − ${coef}·log₁₀(r) − ${k}`,
+      `= ${fmt(Lw)} − ${coef}·log₁₀(${fmt(r)}) − ${k}`,
+      `= ${fmt(Lw)} − ${fmt(coef * lg(r), 3)} − ${k}`,
+      `= <b>${fmt(Lp, 2)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Room acoustics ---------------- */
@@ -485,8 +630,13 @@ function doRT() {
   else if (V === null) V = T * a * S / 0.161;
   $('rt-V').value = fmt(V, 2); $('rt-S').value = fmt(S, 2); $('rt-a').value = fmt(a, 4); $('rt-T').value = fmt(T, 3);
   show('rt-out',
-    `T₆₀ = <b>${fmt(T, 3)} s</b> · ᾱ = <b>${fmt(a, 4)}</b><br>
-     Equivalent absorption area A = ᾱ·S = <b>${fmt(a * S, 2)} m²</b>`);
+    `T₆₀ = <b>${fmt(T, 3)} s</b> · ᾱ = <b>${fmt(a, 4)}</b> · A = ᾱ·S = <b>${fmt(a * S, 2)} m²</b>` +
+    work([
+      `T₆₀ = 0.161·V / (ᾱ·S)`,
+      `= 0.161·${fmt(V)} / (${fmt(a, 4)}·${fmt(S)})`,
+      `= ${fmt(0.161 * V, 3)} / ${fmt(a * S, 3)}`,
+      `= <b>${fmt(T, 3)} s</b>`,
+    ]));
 }
 function doAvgAbs() {
   const rows = parseRows($('aa-list').value);
@@ -507,8 +657,15 @@ function doRoomEq() {
   const Lp = Lw + 10 * lg(direct + rev);
   const dom = direct > rev ? 'direct field dominates' : 'reverberant field dominates';
   show('re-out',
-    `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b><br>
-     <span class="small">direct Q/4πr² = ${direct.toExponential(2)} · reverberant 4/R = ${rev.toExponential(2)} → ${dom}</span>`);
+    `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b> &nbsp;<span class="small">(${dom})</span>` +
+    work([
+      `L_p = L_w + 10·log₁₀( Q/(4πr²) + 4/R )`,
+      `= ${fmt(Lw)} + 10·log₁₀( ${fmt(Q)}/(4π·${fmt(r)}²) + 4/${fmt(R)} )`,
+      `= ${fmt(Lw)} + 10·log₁₀( ${sci(direct)} + ${sci(rev)} )`,
+      `= ${fmt(Lw)} + 10·log₁₀( ${sci(direct + rev)} )`,
+      `= ${fmt(Lw)} + (${fmt(10 * lg(direct + rev), 2)})`,
+      `= <b>${fmt(Lp, 2)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Sound power measurement ---------------- */
@@ -536,8 +693,16 @@ function doLwMeas() {
 /* ---------------- Community noise ---------------- */
 function doLdn() {
   const d = Number($('ldn-day').value), n = Number($('ldn-night').value);
-  const ldn = 10 * lg((15 * 10 ** (d / 10) + 9 * 10 ** ((n + 10) / 10)) / 24);
-  show('ldn-out', `L<sub>dn</sub> = <b>${fmt(ldn, 2)} dB(A)</b>`);
+  const ed = 15 * 10 ** (d / 10), en = 9 * 10 ** ((n + 10) / 10);
+  const ldn = 10 * lg((ed + en) / 24);
+  show('ldn-out', `L<sub>dn</sub> = <b>${fmt(ldn, 2)} dB(A)</b>` +
+    work([
+      `L_dn = 10·log₁₀( (1/24)·[ 15·10^(L_day/10) + 9·10^((L_night+10)/10) ] )`,
+      `= 10·log₁₀( (1/24)·[ 15·10^(${fmt(d)}/10) + 9·10^((${fmt(n)}+10)/10) ] )`,
+      `= 10·log₁₀( (1/24)·[ ${sci(ed)} + ${sci(en)} ] )`,
+      `= 10·log₁₀( ${sci((ed + en) / 24, 5)} )`,
+      `= <b>${fmt(ldn, 2)} dB(A)</b>`,
+    ]));
 }
 
 /* ---------------- Insulation / TL ---------------- */
@@ -551,7 +716,14 @@ function doMassLaw() {
   if (!(M > 0)) return show('ml-out', 'Enter surface mass, or density and thickness.', 'err');
   const TL = 20 * lg(M * f) - 42.4;
   show('ml-out',
-    `Surface mass M = ${fmt(M, 3)} kg/m²<br>TL = <b>${fmt(TL, 1)} dB</b> at ${fmt(f)} Hz`);
+    `Surface mass M = ${fmt(M, 3)} kg/m² · TL = <b>${fmt(TL, 1)} dB</b> at ${fmt(f)} Hz` +
+    work([
+      `TL = 20·log₁₀(M·f) − 42.4`,
+      `= 20·log₁₀(${fmt(M, 3)}·${fmt(f)}) − 42.4`,
+      `= 20·log₁₀(${sci(M * f, 5)}) − 42.4`,
+      `= ${fmt(20 * lg(M * f), 2)} − 42.4`,
+      `= <b>${fmt(TL, 1)} dB</b>`,
+    ]));
 }
 function doInterface() {
   const z1 = Number($('if-z1').value), z2 = Number($('if-z2').value), r = z2 / z1;
@@ -577,7 +749,13 @@ function doAreaChange() {
   const s1 = Number($('ac-s1').value), s2 = Number($('ac-s2').value);
   if (!(s1 > 0 && s2 > 0)) return show('ac-out', 'Areas must be > 0.', 'err');
   const Tt = 4 * s1 * s2 / ((s1 + s2) ** 2);
-  show('ac-out', `T<sub>t</sub> = ${fmt(Tt, 4)} · TL = <b>${fmt(-10 * lg(Tt), 2)} dB</b>`);
+  show('ac-out', `T<sub>t</sub> = ${fmt(Tt, 4)} · TL = <b>${fmt(-10 * lg(Tt), 2)} dB</b>` +
+    work([
+      `T_t = 4·S₁·S₂ / (S₁+S₂)²`,
+      `= 4·${sci(s1)}·${sci(s2)} / (${sci(s1)}+${sci(s2)})²`,
+      `= ${sci(4 * s1 * s2)} / ${sci((s1 + s2) ** 2)} = ${fmt(Tt, 4)}`,
+      `TL = −10·log₁₀(T_t) = −10·log₁₀(${fmt(Tt, 4)}) = <b>${fmt(-10 * lg(Tt), 2)} dB</b>`,
+    ]));
 }
 function doExpChamber() {
   const s1 = Number($('ec-s1').value), s2 = Number($('ec-s2').value), L = Number($('ec-L').value),
