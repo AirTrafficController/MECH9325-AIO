@@ -52,9 +52,12 @@ function doCombine() {
     .map(s => Number(s.trim())).filter(s => !isNaN(s));
   if (!levels.length) return show('combine-out', 'Enter at least one level.', 'err');
   const tot = dBsum(levels);
+  const pRms = 2e-5 * 10 ** (tot / 20);   // RMS pressure, p = p_ref·10^(L/20), p_ref = 2×10⁻⁵ Pa
   show('combine-out',
     `Combined level = <b>${fmt(tot)} dB</b><br>
-     <span class="small">${levels.length} levels combined on an energy basis.</span>`);
+     RMS pressure = <b>${Number(pRms.toPrecision(3))} Pa</b><br>
+     <span class="small">${levels.length} levels combined on an energy basis ·
+     p = 2×10⁻⁵·10^(L/20) Pa</span>`);
 }
 function doIdentical() {
   const L = Number($('ident-L').value), N = Number($('ident-N').value);
