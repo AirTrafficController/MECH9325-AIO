@@ -29,7 +29,7 @@ L<sub>Aeq,12h</sub> = 81.07, L<sub>Aeq,24h</sub> = 70.55, 16 sones).
 ## Key formulas
 
 ```
-Combine:     L_tot = 10·log10( Σ 10^(Li/10) )
+Combine:     L_tot = 10·log10( Σ 10^(Li/10) )   ·   p_rms = 2e-5·10^(L_tot/20) Pa
 N sources:   L_tot = L1 + 10·log10(N)
 Subtract:    L_rem = 10·log10( 10^(Ltot/10) − 10^(Lbg/10) )
 Weighted:    L_W   = 10·log10( Σ 10^((Li+Wi)/10) )
