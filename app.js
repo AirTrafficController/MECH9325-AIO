@@ -265,9 +265,140 @@ function buildRefTable() {
   $('ref-table').innerHTML = h;
 }
 
+/* ---------------- Search ---------------- */
+// Each entry points at a tab. `kw` holds synonyms/keywords (lower-case) so a wide
+// range of search terms resolves to the right calculator. `el` (optional) is the id of
+// an element to scroll to / flash within the tab.
+const SEARCH_INDEX = [
+  { tab:'combine', label:'Combine', title:'Add / combine sound levels', el:'combine-list',
+    desc:'Total of several levels or octave bands, on an energy basis · RMS pressure (Pa)',
+    kw:['combine','add','sum','total','overall level','octave band','octave-band','octave band analysis',
+        'one third octave','third octave','rms','rms pressure','sound pressure','pressure pa','pascal',
+        'incoherent','energy sum','spl','sound pressure level','lp','overall','logarithmic addition'] },
+  { tab:'combine', label:'Combine', title:'N identical sources', el:'ident-out',
+    desc:'Total level of N identical machines · L + 10·log₁₀(N)',
+    kw:['identical sources','n sources','multiple machines','same source','n identical','10 log n',
+        'how many machines','several identical','number of sources'] },
+  { tab:'combine', label:'Combine', title:'Increase when sources are added', el:'inc-out',
+    desc:'Change in level when more identical sources are added',
+    kw:['increase','more sources','added sources','sources added','barking dogs','change in level',
+        'level increase','extra sources'] },
+  { tab:'subtract', label:'Subtract', title:'Subtract a source / background', el:'sub-out',
+    desc:'Remove background or one source from a measured total',
+    kw:['subtract','remove','background','background noise','minus','difference','take away',
+        'correct for background','machine on off','source vs background','energy subtraction'] },
+  { tab:'subtract', label:'Subtract', title:'Level of one of N identical sources', el:'one-out',
+    desc:'Back out a single source level from the combined total of N',
+    kw:['one of n','single source','one source','per source','level of one','divide sources'] },
+  { tab:'weight', label:'Weighting', title:'A / B / C weighting', el:'w-out',
+    desc:'Apply A/B/C network to octave or ⅓-octave bands → dB(A)/dB(B)/dB(C) and linear total',
+    kw:['weighting','weighted','a weighting','b weighting','c weighting','dba','db(a)','dbc','db(c)','dbb',
+        'a-weighted','frequency weighting','network','overall dba','linear','flat','unweighted total',
+        'octave weighting','third octave weighting','correction'] },
+  { tab:'leq', label:'Leq', title:'Equivalent continuous level (Leq)', el:'leq-list',
+    desc:'L_eq from levels & durations',
+    kw:['leq','l eq','equivalent level','equivalent continuous','time average','time-average',
+        'average level','laeq','energy average','exposure level','duration','varying level'] },
+  { tab:'leq', label:'Leq', title:'Leq from discrete events', el:'evt-list',
+    desc:'L_eq from pass-bys: trains, vehicles, events per period',
+    kw:['events','pass by','pass-by','passby','train','vehicle','flyover','number of events',
+        'discrete events','traffic','road noise','rail noise','events per hour'] },
+  { tab:'dose', label:'Noise Dose', title:'Noise dose & OH&S limits', el:'dose-out',
+    desc:'Shift L_Aeq, dose %, OH&S check, max permissible time (85 dB, 3 dB exchange)',
+    kw:['dose','noise dose','daily dose','exposure','occupational','ohs','oh&s','whs','hearing',
+        'permissible','max time','maximum time','exchange rate','85 db','90 db','criterion','laeq 8h',
+        'shift','worker','allowable exposure','exposure time'] },
+  { tab:'loud', label:'Loudness', title:'Loudness — phons ↔ sones', el:'ph2s-out',
+    desc:'Convert phons to sones (and back) · equal-loudness contours',
+    kw:['loudness','loud','sone','sones','phon','phons','equal loudness','equal-loudness contour',
+        'fletcher munson','loudness level','perceived loudness'] },
+  { tab:'speech', label:'Speech (PSIL)', title:'Speech interference (PSIL)', el:'psil-out',
+    desc:'Preferred Speech Interference Level + voice-effort & distance guidance',
+    kw:['psil','speech','speech interference','preferred speech interference','voice','talker','listener',
+        'communication','intelligibility','voice effort','distance','sil','conversation'] },
+  { tab:'stats', label:'Stats / SEL', title:'Statistical levels & SEL', el:'sort-out',
+    desc:'L₁/L₁₀/L₉₀/L₉₉ meanings · SEL ↔ L_eq · percentile levels',
+    kw:['stats','statistical','percentile','l1','l10','l90','l99','l50','median','exceedance',
+        'sel','sound exposure level','single event','background l90','ambient l90','percentile level'] },
+  { tab:'table', label:'Tables', title:'A/B/C weighting reference table', el:'ref-table',
+    desc:'Full A/B/C weighting network values by frequency',
+    kw:['table','reference','weighting table','network table','values','lookup','a b c values',
+        'correction table','frequency table'] },
+];
+
+function runSearch(q) {
+  const box = $('search-results');
+  q = q.trim().toLowerCase();
+  if (!q) { box.classList.remove('open'); box.innerHTML = ''; return; }
+  const terms = q.split(/\s+/);
+  const scored = SEARCH_INDEX.map(item => {
+    const hay = (item.title + ' ' + item.label + ' ' + item.desc + ' ' + item.kw.join(' ')).toLowerCase();
+    let score = 0;
+    for (const t of terms) {
+      if (item.kw.some(k => k === t)) score += 5;          // exact keyword
+      else if (item.kw.some(k => k.includes(t))) score += 3; // keyword contains term
+      else if (hay.includes(t)) score += 1;                  // anywhere
+    }
+    return { item, score };
+  }).filter(s => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+
+  if (!scored.length) {
+    box.innerHTML = `<div class="none">No match for “${q}”. Try: octave band, dB(A), Leq, dose, sones, PSIL, SEL.</div>`;
+    box.classList.add('open');
+    return;
+  }
+  box.innerHTML = scored.map(({ item }, i) =>
+    `<div class="hit${i === 0 ? ' active' : ''}" data-tab="${item.tab}" data-el="${item.el || ''}">
+       <div class="t"><span class="tag">${item.label}</span>${item.title}</div>
+       <div class="d">${item.desc}</div>
+     </div>`).join('');
+  box.classList.add('open');
+  box.querySelectorAll('.hit').forEach(h =>
+    h.onmousedown = e => { e.preventDefault(); gotoHit(h.dataset.tab, h.dataset.el); });
+}
+
+function gotoHit(tab, el) {
+  selectTab(tab);
+  const box = $('search-results');
+  box.classList.remove('open');
+  $('search').value = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (el) {
+    const target = $(el);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('flash');
+      setTimeout(() => target.classList.remove('flash'), 1200);
+    }
+  }
+}
+
+function initSearch() {
+  const inp = $('search'), box = $('search-results');
+  if (!inp) return;
+  inp.addEventListener('input', () => runSearch(inp.value));
+  inp.addEventListener('focus', () => { if (inp.value.trim()) runSearch(inp.value); });
+  inp.addEventListener('keydown', e => {
+    const hits = [...box.querySelectorAll('.hit')];
+    if (!hits.length) return;
+    let idx = hits.findIndex(h => h.classList.contains('active'));
+    if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(idx + 1, hits.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(idx - 1, 0); }
+    else if (e.key === 'Enter') { e.preventDefault(); const h = hits[idx] || hits[0]; gotoHit(h.dataset.tab, h.dataset.el); return; }
+    else if (e.key === 'Escape') { box.classList.remove('open'); inp.blur(); return; }
+    else return;
+    hits.forEach(h => h.classList.remove('active'));
+    hits[idx].classList.add('active');
+  });
+  document.addEventListener('click', e => {
+    if (!inp.contains(e.target) && !box.contains(e.target)) box.classList.remove('open');
+  });
+}
+
 /* ---------------- init ---------------- */
 window.addEventListener('DOMContentLoaded', () => {
   initTabs();
   buildWeightTable();
   buildRefTable();
+  initSearch();
 });
