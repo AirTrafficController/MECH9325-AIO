@@ -9,6 +9,24 @@ course Moodle quizzes. **No build step, no server, no dependencies** — just op
 - Double-click `index.html`, **or**
 - Serve the folder: `python3 -m http.server` then visit <http://localhost:8000>
 
+## Offline Python version (exam-friendly)
+
+`mech9325.py` is a standard-library-only port of the same calculators — no pip
+installs, no internet, no dependencies. Useful where only Excel and Python are
+allowed. Two ways to use it:
+
+```bash
+python3 mech9325.py          # interactive menu
+```
+
+```python
+from mech9325 import combine, weighting, leq, noise_dose, phon_to_sone
+combine([80, 90, 100, 90, 100, 90, 90, 110, 80, 60])   # -> 110.94 dB, 7.05 Pa
+```
+
+It mirrors every tab (combine/subtract, weighting, Leq, events, dose, loudness,
+PSIL, SEL/stats, reference table) and is validated against the same quiz answers.
+
 ## What it covers
 
 | Tab | Calculations | From |
