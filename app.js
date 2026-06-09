@@ -70,7 +70,7 @@ function show(id, html, cls = 'ok') {
 const TABS = [
   ['levels', 'Levels'], ['combine', 'Combine'], ['subtract', 'Subtract'],
   ['waves', 'Waves'], ['dist', 'Distance'], ['room', 'Room Acoustics'],
-  ['power', 'Sound Power'], ['weight', 'Weighting'], ['leq', 'Leq'],
+  ['power', 'Sound Power'], ['duct', 'Duct → Voltage'], ['weight', 'Weighting'], ['leq', 'Leq'],
   ['dose', 'Noise Dose'], ['loud', 'Loudness'], ['speech', 'Speech (PSIL)'],
   ['community', 'Community'], ['stats', 'Stats / SEL'], ['tl', 'Insulation (TL)'],
   ['muffler', 'Mufflers'], ['table', 'Tables'],
@@ -84,6 +84,7 @@ const TAB_TAGS = {
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere surface area reference source mean spl',
+  duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
   leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq',
   dose: 'noise dose ohs oh&s occupational exposure limit 85 db permissible time exchange rate hearing shift worker percent percentage criterion',
@@ -688,6 +689,51 @@ function doLwMeas() {
   if (!(S > 0)) return show('lwm-out', 'Surface area must be > 0.', 'err');
   const Lw = (lp - k1 - k2) + 10 * lg(S);
   show('lwm-out', `L<sub>w</sub> = <b>${fmt(Lw, 2)} dB</b> &nbsp;<span class="small">= (${lp}−${k1}−${k2}) + 10·log₁₀(${S})</span>`);
+}
+
+/* ---------------- Duct: sound power → microphone voltage ---------------- */
+function doDuct() {
+  const Lw   = Number($('duct-Lw').value);          // sound power level, dB re 1e-12 W
+  const d    = Number($('duct-d').value) / 1000;    // pipe diameter, mm → m
+  const Sdb  = Number($('duct-sens').value);        // mic sensitivity, dB re 1 V/Pa
+  const rho  = Number($('duct-rho').value);         // air density, kg/m³
+  const c    = Number($('duct-c').value);           // sound speed, m/s
+  const fmax = blank('duct-fmax') ? 0 : Number($('duct-fmax').value); // highest freq present, Hz (optional)
+
+  if (!(d > 0))           return show('duct-out', 'Pipe diameter must be > 0.', 'err');
+  if (!(rho > 0 && c > 0)) return show('duct-out', 'Density and sound speed must be > 0.', 'err');
+
+  const W   = W_REF * 10 ** (Lw / 10);   // acoustic power, W
+  const A   = Math.PI * d * d / 4;       // duct cross-sectional area, m²
+  const I   = W / A;                     // plane-wave intensity, W/m²
+  const rc  = rho * c;                   // characteristic impedance, rayls
+  const p   = Math.sqrt(I * rc);         // RMS pressure (plane wave), Pa
+  const Lp  = 20 * lg(p / P_REF);        // SPL, dB re 20 µPa
+  const sens = 10 ** (Sdb / 20);         // mic sensitivity, V/Pa
+  const V   = p * sens;                  // RMS voltage, V
+
+  // Plane-wave check: first higher-order mode in a circular duct cuts on here.
+  const fc = 1.8412 * c / (Math.PI * d);
+  let modeNote;
+  if (fmax > 0) {
+    modeNote = fmax < fc
+      ? `<span class="small">Highest frequency ${fmt(fmax, 0)} Hz &lt; cut-on ${fmt(fc, 0)} Hz ⇒ <b class="good">plane waves only</b> — analysis valid.</span>`
+      : `<span class="small">Highest frequency ${fmt(fmax, 0)} Hz ≥ cut-on ${fmt(fc, 0)} Hz ⇒ <b class="bad">higher-order modes propagate</b> — plane-wave result is approximate.</span>`;
+  } else {
+    modeNote = `<span class="small">First higher-order mode cuts on at <b>${fmt(fc, 0)} Hz</b> (plane-wave assumption valid below this).</span>`;
+  }
+
+  show('duct-out',
+    `RMS voltage = <b>${V.toPrecision(4)} V</b> &nbsp;(${(V * 1000).toPrecision(4)} mV)` +
+    work([
+      `W = W_ref · 10^(L_w/10) = 10⁻¹² · 10^(${fmt(Lw)}/10) = ${sci(W)} W`,
+      `A = πd²/4 = π·(${fmt(d, 4)})²/4 = ${sci(A)} m²`,
+      `I = W/A = ${sci(W)} / ${sci(A)} = ${sci(I)} W/m²`,
+      `p_rms = √(I·ρc) = √(${sci(I)} · ${fmt(rho)}·${fmt(c)}) = √(${sci(I * rc)}) = <b>${p.toPrecision(4)} Pa</b>`,
+      `(SPL L_p = 20·log₁₀(p/p_ref) = ${fmt(Lp, 1)} dB)`,
+      `mic sensitivity = 10^(S/20) = 10^(${fmt(Sdb)}/20) = ${sci(sens)} V/Pa`,
+      `V = p_rms · 10^(S/20) = ${p.toPrecision(4)} · ${sci(sens)} = <b>${V.toPrecision(4)} V</b>`,
+    ]) + modeNote);
 }
 
 /* ---------------- Community noise ---------------- */

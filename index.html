@@ -336,6 +336,41 @@
   </div>
 </section>
 
+<!-- ============================ DUCT ============================ -->
+<section class="tab" data-tab="duct">
+  <h2>Duct: Sound Power → Microphone Voltage</h2>
+  <p class="desc">A source radiates a known acoustic <strong>power</strong> as plane waves along a pipe
+     (no reflections / anechoic termination). The wave fills the duct cross-section, so
+     <span class="f">I = W/A</span> with <span class="f">A = πd²/4</span>; for a plane wave
+     <span class="f">p<sub>rms</sub> = √(I·ρc)</span>, and a microphone of sensitivity <em>S</em> dB re 1 V/Pa
+     gives <span class="f">V = p<sub>rms</sub>·10<sup>S/20</sup></span> (Units 1–2, 4).</p>
+
+  <div class="card">
+    <h3>Compute microphone voltage</h3>
+    <div class="row">
+      <label>Sound power level L<sub>w</sub> (dB re 10⁻¹² W)
+        <input id="duct-Lw" type="number" value="93" step="any"></label>
+      <label>Pipe diameter d (mm)
+        <input id="duct-d" type="number" value="114" step="any"></label>
+      <label>Mic sensitivity S (dB re 1 V/Pa)
+        <input id="duct-sens" type="number" value="-68" step="any"></label>
+    </div>
+    <div class="row">
+      <label>Air density ρ (kg/m³)
+        <input id="duct-rho" type="number" value="1.21" step="any"></label>
+      <label>Sound speed c (m/s)
+        <input id="duct-c" type="number" value="343" step="any"></label>
+      <label>Highest frequency present (Hz) — optional, for plane-wave check
+        <input id="duct-fmax" type="number" value="1500" step="any"></label>
+    </div>
+    <button onclick="doDuct()">Compute voltage</button>
+    <div id="duct-out" class="result"></div>
+    <p class="note">W = 10⁻¹²·10<sup>L<sub>w</sub>/10</sup> &nbsp;·&nbsp; I = W/A &nbsp;·&nbsp;
+       p<sub>rms</sub> = √(I·ρc) &nbsp;·&nbsp; V = p<sub>rms</sub>·10<sup>S/20</sup>.
+       Higher-order modes cut on above f<sub>c</sub> = 1.841·c/(πd).</p>
+  </div>
+</section>
+
 <!-- ============================ WEIGHTING ============================ -->
 <section class="tab" data-tab="weight">
   <h2>A / B / C Weighting &amp; Overall Level</h2>

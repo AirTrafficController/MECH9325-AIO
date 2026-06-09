@@ -32,6 +32,7 @@ selector on that card. The reference period T also accepts a unit (e.g. `8 h`, `
 | **Distance** | Point (−6 dB/doubling) vs line (−3 dB/doubling) spreading · L<sub>p</sub> from L<sub>w</sub> (free-field/ground) | Quiz 5, Unit 3 |
 | **Room Acoustics** | Sabine T₆₀ (solve any term) · average absorption ᾱ · room constant R · room equation L<sub>p</sub>=L<sub>w</sub>+10log(Q/4πr²+4/R) | Unit 3–4 |
 | **Sound Power** | Background correction K₁ · environmental K₂ · L<sub>w</sub> from surface SPL | Unit 4 |
+| **Duct → Voltage** | Radiated power in a pipe → intensity (W/A) → plane-wave pressure → microphone voltage (with higher-order-mode cut-on check) | Unit 1–2, 4 |
 | **Weighting** | A/B/C weighting of octave or ⅓-octave bands → dB(A)/dB(B)/dB(C) and linear total | Quiz 1 |
 | **Leq** | L<sub>eq</sub> from levels & durations (incl. meter periods) · from discrete events · **mixed time units** (s/min/h) | Quiz 4, 5, 7, 8 |
 | **Noise Dose** | Worker shift L<sub>Aeq</sub>, dose %, OH&S limit check, max permissible time | Quiz 4 |
