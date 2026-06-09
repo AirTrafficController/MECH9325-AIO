@@ -15,6 +15,13 @@
   </div>
 </header>
 
+<div class="wrap searchbar">
+  <input id="tab-search" type="search" autocomplete="off"
+    placeholder="🔍  Search calculators — e.g. voltage, microphone, pipe, Lw, SPL, dB(A), Leq, sones…"
+    oninput="filterTabs()">
+  <div id="tab-noresult" class="noresult">No calculator matches that — try “voltage”, “power”, “weighting”, “dose”…</div>
+</div>
+
 <nav id="tabs" class="wrap"></nav>
 
 <main class="wrap">

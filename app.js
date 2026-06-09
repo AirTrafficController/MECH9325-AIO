@@ -23,22 +23,51 @@ function show(id, html, cls = 'ok') {
 }
 
 /* ---------------- Tabs ---------------- */
+// [id, label, search keywords]
 const TABS = [
-  ['combine', 'Combine'], ['subtract', 'Subtract'], ['weight', 'Weighting'],
-  ['leq', 'Leq'], ['dose', 'Noise Dose'], ['loud', 'Loudness'],
-  ['speech', 'Speech (PSIL)'], ['stats', 'Stats / SEL'],
-  ['duct', 'Duct → Voltage'], ['table', 'Tables'],
+  ['combine', 'Combine', 'add levels sum incoherent combine sources total spl rms pressure octave bands'],
+  ['subtract', 'Subtract', 'subtract remove background source minus one of n identical'],
+  ['weight', 'Weighting', 'weighting a b c dba dbc dbb network octave third overall weighted'],
+  ['leq', 'Leq', 'leq equivalent continuous level time average duration events passby train vehicle'],
+  ['dose', 'Noise Dose', 'noise dose occupational exposure ohs limit 85 8 hour shift worker permissible time'],
+  ['loud', 'Loudness', 'loudness phons sones equal loudness contour'],
+  ['speech', 'Speech (PSIL)', 'speech interference psil communication voice effort distance 500 1000 2000'],
+  ['stats', 'Stats / SEL', 'statistical l1 l10 l90 l99 percentile sel sound exposure level background'],
+  ['duct', 'Duct → Voltage',
+    'duct pipe tube voltage microphone mic sensitivity v/pa volts sound power lw power level ' +
+    'watts intensity plane wave rms pressure radiated source anechoic no reflection diameter'],
+  ['table', 'Tables', 'reference table weighting a b c values'],
 ];
 function initTabs() {
   const nav = $('tabs');
-  TABS.forEach(([id, label], i) => {
+  TABS.forEach(([id, label, keywords], i) => {
     const b = document.createElement('button');
     b.textContent = label;
     b.onclick = () => selectTab(id);
     b.dataset.for = id;
+    b.dataset.keywords = (label + ' ' + (keywords || '')).toLowerCase();
     nav.appendChild(b);
     if (i === 0) selectTab(id);
   });
+}
+// Filter the tab buttons by the search box; auto-select the first match.
+function filterTabs() {
+  const q = $('tab-search').value.trim().toLowerCase();
+  const terms = q.split(/\s+/).filter(Boolean);
+  let firstMatch = null;
+  document.querySelectorAll('#tabs button').forEach(b => {
+    const hay = b.dataset.keywords;
+    const hit = terms.every(t => hay.includes(t));
+    b.style.display = hit ? '' : 'none';
+    if (hit && !firstMatch) firstMatch = b;
+  });
+  const nores = $('tab-noresult');
+  if (nores) nores.style.display = firstMatch ? 'none' : 'block';
+  // If the active tab was filtered out, jump to the first remaining match.
+  if (q && firstMatch) {
+    const activeBtn = document.querySelector('#tabs button.sel');
+    if (!activeBtn || activeBtn.style.display === 'none') selectTab(firstMatch.dataset.for);
+  }
 }
 function selectTab(id) {
   document.querySelectorAll('.tab').forEach(s =>

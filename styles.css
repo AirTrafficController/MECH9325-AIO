@@ -12,7 +12,12 @@ header{background:linear-gradient(135deg,#16304a,#0f1720);border-bottom:1px soli
 header h1{margin:0 0 6px;font-size:1.55rem}
 header .sub{margin:0;color:var(--muted);max-width:760px}
 
-nav#tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px auto}
+.searchbar{margin:18px auto 0}
+.searchbar input{font-size:1rem;padding:11px 14px}
+.searchbar input::placeholder{color:var(--muted)}
+.noresult{display:none;color:var(--warn);font-size:.85rem;margin-top:8px}
+
+nav#tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px auto 16px}
 nav#tabs button{background:var(--panel);color:var(--muted);border:1px solid var(--line);
   padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.9rem}
 nav#tabs button:hover{color:var(--ink)}
