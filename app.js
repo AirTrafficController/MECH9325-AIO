@@ -26,7 +26,8 @@ function show(id, html, cls = 'ok') {
 const TABS = [
   ['combine', 'Combine'], ['subtract', 'Subtract'], ['weight', 'Weighting'],
   ['leq', 'Leq'], ['dose', 'Noise Dose'], ['loud', 'Loudness'],
-  ['speech', 'Speech (PSIL)'], ['stats', 'Stats / SEL'], ['table', 'Tables'],
+  ['speech', 'Speech (PSIL)'], ['stats', 'Stats / SEL'],
+  ['duct', 'Duct → Voltage'], ['table', 'Tables'],
 ];
 function initTabs() {
   const nav = $('tabs');
@@ -252,6 +253,53 @@ function doSort() {
        <tr><td>L<sub>eq</sub></td><td><b>${fmt(leq)}</b> dB</td></tr>
        <tr><td>L₉₉ (smallest)</td><td><b>${fmt(l99)}</b> dB</td></tr>
      </table>`);
+}
+
+/* ---------------- Duct: power → microphone voltage ---------------- */
+function doDuct() {
+  const Lw   = Number($('duct-Lw').value);      // sound power level, dB re 1e-12 W
+  const Wref = Number($('duct-Wref').value);    // power reference, W
+  const d    = Number($('duct-d').value) / 1000; // pipe diameter, mm → m
+  const Sdb  = Number($('duct-sens').value);    // mic sensitivity, dB re 1 V/Pa
+  const rho  = Number($('duct-rho').value);     // air density, kg/m³
+  const c    = Number($('duct-c').value);       // sound speed, m/s
+  const fmax = Number($('duct-fmax').value);    // highest frequency present, Hz (optional)
+
+  if (!(d > 0))   return show('duct-out', 'Pipe diameter must be > 0.', 'err');
+  if (!(rho > 0 && c > 0)) return show('duct-out', 'Density and sound speed must be > 0.', 'err');
+  if (!(Wref > 0)) return show('duct-out', 'Power reference must be > 0.', 'err');
+
+  const W   = Wref * 10 ** (Lw / 10);           // acoustic power, W
+  const A   = Math.PI * d * d / 4;              // cross-sectional area, m²
+  const I   = W / A;                            // plane-wave intensity, W/m²
+  const p   = Math.sqrt(I * rho * c);           // RMS pressure (plane wave), Pa
+  const Lp  = 20 * lg(p / 2e-5);                // SPL, dB re 20 µPa
+  const sens = 10 ** (Sdb / 20);               // mic sensitivity, V/Pa
+  const V   = p * sens;                         // RMS voltage, V
+
+  // Plane-wave check: first higher-order mode in a circular duct cuts on here.
+  const fc = 1.8412 * c / (Math.PI * d);
+  let modeNote;
+  if (fmax > 0) {
+    modeNote = fmax < fc
+      ? `Highest frequency ${fmt(fmax,0)} Hz &lt; cut-on ${fmt(fc,0)} Hz ⇒ <b class="good">plane waves only</b> — analysis valid.`
+      : `Highest frequency ${fmt(fmax,0)} Hz ≥ cut-on ${fmt(fc,0)} Hz ⇒ <b class="bad">higher-order modes propagate</b> — plane-wave result is approximate.`;
+  } else {
+    modeNote = `First higher-order mode cuts on at <b>${fmt(fc,0)} Hz</b> (plane-wave assumption valid below this).`;
+  }
+
+  show('duct-out',
+    `<table class="bands">
+       <tr><td>Acoustic power W</td><td><b>${Number(W.toPrecision(4))} W</b></td></tr>
+       <tr><td>Duct area A = πd²/4</td><td><b>${Number(A.toPrecision(4))} m²</b></td></tr>
+       <tr><td>Intensity I = W/A</td><td><b>${Number(I.toPrecision(4))} W/m²</b></td></tr>
+       <tr><td>RMS pressure p = √(I·ρc)</td><td><b>${Number(p.toPrecision(4))} Pa</b></td></tr>
+       <tr><td>Sound pressure level L<sub>p</sub></td><td><b>${fmt(Lp,1)} dB</b></td></tr>
+       <tr><td>Mic sensitivity</td><td>${Number(sens.toPrecision(4))} V/Pa</td></tr>
+     </table>
+     <div class="big">RMS voltage = <b>${Number(V.toPrecision(4))} V</b>
+       &nbsp;(${Number((V*1000).toPrecision(4))} mV)</div>
+     <span class="small">${modeNote}</span>`);
 }
 
 /* ---------------- Reference table ---------------- */

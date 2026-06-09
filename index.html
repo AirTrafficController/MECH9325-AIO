@@ -278,6 +278,45 @@
   </div>
 </section>
 
+<!-- ============================ DUCT ============================ -->
+<section class="tab" data-tab="duct">
+  <h2>Duct: Sound Power → Microphone Voltage</h2>
+  <p class="desc">A source radiates a known acoustic <strong>power</strong> as plane waves down a pipe
+     (no reflections / anechoic termination). The wave fills the duct cross-section, so the intensity is
+     <span class="f">I = W / A</span> with <span class="f">A = πd²/4</span>. For a plane wave the RMS pressure is
+     <span class="f">p = √(I·ρc)</span>, and a microphone of sensitivity <em>S</em> dB re 1 V/Pa gives
+     <span class="f">V = p · 10<sup>S/20</sup></span>.</p>
+
+  <div class="card">
+    <h3>Compute microphone voltage</h3>
+    <div class="row">
+      <label>Sound power level L<sub>W</sub> (dB)
+        <input id="duct-Lw" type="number" value="93" step="any"></label>
+      <label>Power reference W<sub>ref</sub> (W)
+        <input id="duct-Wref" type="number" value="1e-12" step="any"></label>
+      <label>Pipe diameter d (mm)
+        <input id="duct-d" type="number" value="114" step="any"></label>
+    </div>
+    <div class="row">
+      <label>Mic sensitivity S (dB re 1 V/Pa)
+        <input id="duct-sens" type="number" value="-68" step="any"></label>
+      <label>Air density ρ (kg/m³)
+        <input id="duct-rho" type="number" value="1.21" step="any"></label>
+      <label>Sound speed c (m/s)
+        <input id="duct-c" type="number" value="343" step="any"></label>
+    </div>
+    <div class="row">
+      <label>Highest frequency present (Hz) — optional, for plane-wave check
+        <input id="duct-fmax" type="number" value="1500" step="any"></label>
+    </div>
+    <button onclick="doDuct()">Compute voltage</button>
+    <div id="duct-out" class="result"></div>
+    <p class="note">W = W<sub>ref</sub>·10<sup>L<sub>W</sub>/10</sup> &nbsp;·&nbsp;
+       I = W/A &nbsp;·&nbsp; p = √(I·ρc) &nbsp;·&nbsp; V = p·10<sup>S/20</sup>.
+       Higher-order modes cut on above f<sub>c</sub> = 1.841·c/(πd).</p>
+  </div>
+</section>
+
 <!-- ============================ TABLE ============================ -->
 <section class="tab" data-tab="table">
   <h2>Reference — A / B / C Weighting Network Values</h2>
