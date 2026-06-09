@@ -21,6 +21,7 @@ course Moodle quizzes. **No build step, no server, no dependencies** — just op
 | **Loudness** | Phons ↔ sones, equal-loudness-contour guidance | Quiz 6 |
 | **Speech (PSIL)** | Preferred Speech Interference Level + voice-effort guidance | Quiz 6 |
 | **Stats / SEL** | L₁/L₁₀/L₉₀/L₉₉/L<sub>eq</sub>/SEL meanings · SEL ↔ L<sub>eq</sub> · sort values into terms | Quiz 6 |
+| **Duct → Voltage** | Sound power in a pipe → intensity → plane-wave pressure → microphone voltage (with higher-order-mode cut-on check) | — |
 | **Tables** | Full A/B/C weighting network reference table | — |
 
 Every formula was validated against the worked quiz answers (e.g. dB(A) total = 77.5,
@@ -39,6 +40,7 @@ Max time:    T     = Tc / 2^((LAeq − Lc)/q)      (Lc=85, q=3, Tc=8)
 Sones:       S     = 2^((LL − 40)/10)
 PSIL:        PSIL  = (L500 + L1000 + L2000) / 3
 SEL:         SEL   = Leq + 10·log10(T / 1s)
+Duct→V:      W = Wref·10^(Lw/10) · I = W/A (A=πd²/4) · p = √(I·ρc) · V = p·10^(S/20)
 ```
 
 ## Files
