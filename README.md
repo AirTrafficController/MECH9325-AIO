@@ -13,7 +13,7 @@ course Moodle quizzes. **No build step, no server, no dependencies** — just op
 
 | Tab | Calculations | From |
 |-----|--------------|------|
-| **Combine** | Add incoherent levels · N identical sources · increase in level when sources are added | Quiz 1 |
+| **Combine** | Add incoherent levels · N identical sources · increase in level when sources are added · error from using only the larger of two RMS signals | Quiz 1 |
 | **Subtract** | Remove a source / background · level of one of N identical sources | Quiz 1 |
 | **Weighting** | A/B/C weighting of octave or ⅓-octave bands → overall dB(A)/dB(B)/dB(C) and linear total | Quiz 1 |
 | **Leq** | L<sub>eq</sub> from levels & durations · L<sub>eq</sub> from discrete events (train/vehicle pass-bys) | Quiz 4, 7 |
@@ -31,6 +31,7 @@ L<sub>Aeq,12h</sub> = 81.07, L<sub>Aeq,24h</sub> = 70.55, 16 sones).
 
 ```
 Combine:     L_tot = 10·log10( Σ 10^(Li/10) )   ·   p_rms = 2e-5·10^(L_tot/20) Pa
+Larger-only: p_tot = sqrt(p1^2 + p2^2)   ·   Error = 1/sqrt(1 + r^2) − 1,  r = p2/p1
 N sources:   L_tot = L1 + 10·log10(N)
 Subtract:    L_rem = 10·log10( 10^(Ltot/10) − 10^(Lbg/10) )
 Weighted:    L_W   = 10·log10( Σ 10^((Li+Wi)/10) )
