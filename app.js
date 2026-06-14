@@ -79,6 +79,29 @@ function doIncrease() {
      New total level = <b>${fmt(nl, 3)} dB</b><br>
      <span class="small">ΔL = 10·log₁₀(${n2}/${n1})</span>`);
 }
+function doLargerError() {
+  const p1 = Number($('err-p1').value), p2 = Number($('err-p2').value);
+  const rIn = $('err-ratio').value.trim();
+  // Ratio field overrides the two pressures when supplied.
+  let r;
+  if (rIn.length) {
+    r = Number(rIn);
+    if (!(r >= 0)) return show('err-out', 'Ratio must be ≥ 0.', 'err');
+  } else {
+    if (!(p1 > 0) || !(p2 >= 0)) return show('err-out',
+      'Enter a positive larger RMS and a non-negative smaller RMS (or a ratio).', 'err');
+    r = p2 / p1;
+  }
+  if (r > 1) return show('err-out',
+    'The ratio should be ≤ 1 — p₂ is the <em>smaller</em> signal.', 'err');
+  const ptot = Math.sqrt(1 + r * r);          // total RMS as a multiple of the larger signal p₁
+  const err = (1 / ptot - 1) * 100;           // (estimate − true)/true, estimate = p₁
+  show('err-out',
+    `Total RMS = <b>${Number(ptot.toPrecision(5))} × p₁</b> &nbsp;(√(1 + ${Number(r.toPrecision(4))}²))<br>
+     Error using only p₁ = <b>${fmt(err, 2)} %</b> &nbsp;(under-estimate)<br>
+     <span class="small">|Error| ≈ ${fmt(Math.abs(err), 2)} % · negative ⇒ the larger signal alone
+     under-estimates the true total RMS</span>`);
+}
 
 /* ---------------- Subtract ---------------- */
 function doSubtract() {
