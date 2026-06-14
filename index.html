@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
 <header>
@@ -204,6 +204,7 @@
         <select id="be-type"><option value="oct">Octave</option><option value="third">⅓ Octave</option></select></label>
       <button onclick="doBandEdges()">Band edges</button>
       <div id="be-out" class="result"></div>
+      <p class="note">%BW = (f<sub>u</sub>−f<sub>l</sub>)/f<sub>c</sub>·100 → octave ≈ 70.7% · ⅓-octave ≈ 23.1%</p>
       <hr style="border-color:#2a3a4d;margin:14px 0">
       <label>Pipe length L (m), closed one end <input id="pipe-L" type="number" value="0.5" step="any"></label>
       <label>Speed c (m/s) <input id="pipe-c" type="number" value="343" step="any"></label>
@@ -730,7 +731,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="data.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

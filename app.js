@@ -80,7 +80,7 @@ const TAB_TAGS = {
   levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts',
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
-  waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave',
+  waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere surface area reference source mean spl',
@@ -616,9 +616,19 @@ function doBandEdges() {
   const fc = Number($('be-fc').value), type = $('be-type').value;
   if (!(fc > 0)) return show('be-out', 'Centre frequency must be > 0.', 'err');
   const e = bandEdges(fc, type);
+  const bw = e.upper - e.lower, pct = bw / fc * 100;
+  const kStr = type === 'third' ? '2^(1/6)' : '√2';
+  const name = type === 'third' ? 'one-third octave' : 'octave';
+  const ref = type === 'third' ? '23.1' : '70.7';
   show('be-out',
     `Lower = <b>${fmt(e.lower, 1)} Hz</b> · Upper = <b>${fmt(e.upper, 1)} Hz</b><br>
-     Bandwidth = ${fmt(e.upper - e.lower, 1)} Hz`);
+     Bandwidth = <b>${fmt(bw, 1)} Hz</b> · Percentage bandwidth = <b>${fmt(pct, 1)} %</b>` +
+    work([
+      `f_lower = f_c / ${kStr},  f_upper = f_c · ${kStr}`,
+      `BW = f_upper − f_lower = ${fmt(e.upper, 1)} − ${fmt(e.lower, 1)} = ${fmt(bw, 1)} Hz`,
+      `%BW = BW / f_c × 100 = ${fmt(bw, 1)} / ${fmt(fc, 1)} × 100 = <b>${fmt(pct, 1)} %</b>`,
+      `(= ${kStr} − 1/${kStr}, constant for any f_c → ${name} ≈ ${ref} %)`,
+    ]));
 }
 function doPipe() {
   const L = Number($('pipe-L').value), c = Number($('pipe-c').value);
