@@ -78,7 +78,7 @@ const TABS = [
 // Search keywords/tags per tab (lowercase). Matched against the typed query.
 const TAB_TAGS = {
   levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts',
-  combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder',
+  combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor',
@@ -187,6 +187,32 @@ function doIncrease() {
       `ΔL = 10·log₁₀(N₂/N₁) = 10·log₁₀(${n2}/${n1})`,
       `= 10·log₁₀(${fmt(n2 / n1, 4)}) = <b>${fmt(dL, 3)} dB</b>`,
       `L_new = L₁ + ΔL = ${fmt(L1)} + ${fmt(dL, 3)} = <b>${fmt(nl, 3)} dB</b>`,
+    ]));
+}
+function doLargerError() {
+  const p1 = Number($('err-p1').value), p2 = Number($('err-p2').value);
+  const rIn = $('err-ratio').value.trim();
+  // The ratio field overrides the two pressures when supplied.
+  let r;
+  if (rIn.length) {
+    r = Number(rIn);
+    if (!(r >= 0)) return show('err-out', 'Ratio must be ≥ 0.', 'err');
+  } else {
+    if (!(p1 > 0) || !(p2 >= 0)) return show('err-out',
+      'Enter a positive larger RMS and a non-negative smaller RMS (or a ratio).', 'err');
+    r = p2 / p1;
+  }
+  if (r > 1) return show('err-out',
+    'The ratio should be ≤ 1 — p₂ is the <em>smaller</em> signal.', 'err');
+  const ptot = Math.sqrt(1 + r * r);          // total RMS as a multiple of the larger signal p₁
+  const err = (1 / ptot - 1) * 100;           // (estimate − true)/true, estimate = p₁
+  show('err-out',
+    `Total RMS = <b>${sci(ptot, 5)} × p₁</b> · Error using only p₁ = <b>${fmt(err, 2)} %</b> (under-estimate)` +
+    work([
+      `r = p₂/p₁ = ${sci(r, 4)}`,
+      `p_tot = √(p₁² + p₂²) = p₁·√(1 + r²) = p₁·√(1 + ${sci(r * r, 4)}) = <b>${sci(ptot, 5)}·p₁</b>`,
+      `Error = (p₁ − p_tot)/p_tot = 1/√(1 + r²) − 1`,
+      `= 1/${sci(ptot, 5)} − 1 = <b>${fmt(err, 2)} %</b> (negative ⇒ under-estimate)`,
     ]));
 }
 

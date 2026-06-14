@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 <header>
@@ -114,6 +114,22 @@
     <button onclick="doIncrease()">Compute</button>
     <div id="inc-out" class="result"></div>
     <p class="note">ΔL = 10·log<sub>10</sub>(N₂ / N₁) &nbsp;·&nbsp; New level = L₁ + ΔL</p>
+  </div>
+
+  <div class="card">
+    <h3>Error from using only the larger signal</h3>
+    <p class="hint">Two incoherent RMS pressures add in quadrature
+       <span class="f">p<sub>tot</sub> = √(p₁² + p₂²)</span>. This finds the % error if the smaller
+       signal is ignored and only the larger one is used to estimate the total RMS. Enter the two RMS
+       values, <em>or</em> just the ratio (smaller ÷ larger).</p>
+    <div class="row">
+      <label>Larger RMS p₁ (any unit) <input id="err-p1" type="number" value="1" step="any"></label>
+      <label>Smaller RMS p₂ (same unit) <input id="err-p2" type="number" value="0.11" step="any"></label>
+      <label>…or ratio p₂/p₁ <input id="err-ratio" type="number" placeholder="0.11" step="any"></label>
+    </div>
+    <button onclick="doLargerError()">Compute error</button>
+    <div id="err-out" class="result"></div>
+    <p class="note">Error = (p₁ − p<sub>tot</sub>) / p<sub>tot</sub> = 1/√(1 + r²) − 1, &nbsp; r = p₂/p₁</p>
   </div>
 </section>
 
@@ -714,7 +730,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="data.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
