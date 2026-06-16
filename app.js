@@ -77,7 +77,7 @@ const TABS = [
 ];
 // Search keywords/tags per tab (lowercase). Matched against the typed query.
 const TAB_TAGS = {
-  levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts',
+  levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts psd power spectral density pa2/hz pa^2/hz integrate area trapezoid band linear flat mean square spectrum frequency limits',
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
@@ -581,6 +581,24 @@ function doRMScombine() {
       `= √( ${ps.map(p => `${sci(p)}²`).join(' + ')} )`,
       `= √( ${sci(sumSq)} )`,
       `= <b>${tot.toPrecision(4)} Pa</b>`,
+    ]));
+}
+function doPSD() {
+  const f1 = Number($('psd-f1').value), f2 = Number($('psd-f2').value);
+  const s1 = Number($('psd-s1').value), s2 = Number($('psd-s2').value);
+  if (!(f2 > f1)) return show('psd-out', 'Upper frequency must exceed lower frequency.', 'err');
+  if (!(s1 >= 0) || !(s2 >= 0)) return show('psd-out', 'PSD values must be ≥ 0.', 'err');
+  // Mean-square pressure is the area under the PSD; a linear PSD makes that a trapezoid.
+  const bw = f2 - f1, ms = (s1 + s2) / 2 * bw, prms = Math.sqrt(ms), spl = 20 * lg(prms / P_REF);
+  const flat = s1 === s2;
+  show('psd-out',
+    `Mean-square p² = <b>${sci(ms, 4)} Pa²</b> · p<sub>rms</sub> = <b>${prms.toPrecision(4)} Pa</b> · SPL = <b>${fmt(spl, 2)} dB</b>` +
+    work([
+      `p_rms² = ∫ S(f) df over [${sci(f1)}, ${sci(f2)}] Hz` + (flat ? ` (flat band)` : ` (trapezoid — linear PSD)`),
+      `= ½(S₁ + S₂)(f₂ − f₁) = ½(${sci(s1)} + ${sci(s2)})(${sci(bw)})`,
+      `= <b>${sci(ms, 4)} Pa²</b>`,
+      `p_rms = √(${sci(ms, 4)}) = <b>${prms.toPrecision(4)} Pa</b>`,
+      `SPL = 20·log₁₀(p_rms / 2×10⁻⁵) = <b>${fmt(spl, 2)} dB</b>`,
     ]));
 }
 

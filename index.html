@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
 <header>
@@ -69,6 +69,23 @@
       <button onclick="doRMScombine()">Combine → total p &amp; SPL</button>
       <div id="rmsc-out" class="result"></div>
       <p class="note">p<sub>tot</sub> = √(Σ p<sub>i</sub>²)</p>
+    </div>
+
+    <div class="card">
+      <h3>PSD → RMS pressure (integrate a band)</h3>
+      <p class="hint">Mean-square pressure = area under the power spectral density S(f) across the band.
+         For a linearly-varying PSD enter both endpoint densities; for a flat band put the same value in both.</p>
+      <div class="row">
+        <label>Lower freq f₁ (Hz) <input id="psd-f1" type="number" value="973" step="any"></label>
+        <label>Upper freq f₂ (Hz) <input id="psd-f2" type="number" value="4584" step="any"></label>
+      </div>
+      <div class="row">
+        <label>PSD at f₁ — S₁ (Pa²/Hz) <input id="psd-s1" type="number" value="0.0015" step="any"></label>
+        <label>PSD at f₂ — S₂ (Pa²/Hz) <input id="psd-s2" type="number" value="1.5e-4" step="any"></label>
+      </div>
+      <button onclick="doPSD()">Compute RMS</button>
+      <div id="psd-out" class="result"></div>
+      <p class="note">p<sub>rms</sub>² = ∫S df = ½(S₁+S₂)(f₂−f₁) &nbsp;·&nbsp; SPL = 20·log<sub>10</sub>(p<sub>rms</sub>/2×10⁻⁵)</p>
     </div>
   </div>
 </section>
@@ -731,7 +748,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=10"></script>
-<script src="app.js?v=10"></script>
+<script src="data.js?v=11"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
