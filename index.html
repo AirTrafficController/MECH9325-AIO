@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=14">
+<link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
 <header>
@@ -64,8 +64,11 @@
       <label>Peak pressure amplitude P (Pa) → RMS <input id="rms-P" type="number" value="2" step="any"></label>
       <button onclick="doRMS()">p_rms = P/√2</button>
       <div id="rms-out" class="result"></div>
-      <p class="hint" style="margin-top:10px">Combine several component RMS pressures (Pa, one per line):</p>
+      <p class="hint" style="margin-top:10px">Combine several component RMS pressures (Pa):</p>
+      <div class="lt-grid" data-target="rms-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one value per line)</summary>
       <textarea id="rms-list" rows="3" placeholder="1.0&#10;2.0&#10;0.5"></textarea>
+      <button type="button" data-applygrid="rms-list">Apply to grid</button></details>
       <button onclick="doRMScombine()">Combine → total p &amp; SPL</button>
       <div id="rmsc-out" class="result"></div>
       <p class="note">p<sub>tot</sub> = √(Σ p<sub>i</sub>²)</p>
@@ -100,9 +103,12 @@
   <div class="grid2">
     <div class="card">
       <h3>Add a list of levels</h3>
-      <p class="hint">One level (dB) per line.</p>
+      <p class="hint">One level (dB) per row.</p>
+      <div class="lt-grid" data-target="combine-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one level per line)</summary>
       <textarea id="combine-list" rows="6" placeholder="80&#10;80&#10;74">80
 80</textarea>
+      <button type="button" data-applygrid="combine-list">Apply to grid</button></details>
       <button onclick="doCombine()">Combine</button>
       <div id="combine-out" class="result"></div>
     </div>
@@ -312,8 +318,11 @@
 
     <div class="card">
       <h3>Average absorption coefficient</h3>
-      <p class="hint">One surface per line: <code>area, α</code> (e.g. <code>60, 0.3</code>).</p>
+      <p class="hint">One surface per row: <code>area, α</code> (e.g. <code>60, 0.3</code>).</p>
+      <div class="lt-grid" data-target="aa-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>area, α</code>)</summary>
       <textarea id="aa-list" rows="4" placeholder="60, 0.3&#10;120, 0.05&#10;60, 0.1"></textarea>
+      <button type="button" data-applygrid="aa-list">Apply to grid</button></details>
       <button onclick="doAvgAbs()">Compute ᾱ</button>
       <div id="aa-out" class="result"></div>
       <p class="note">ᾱ = Σ(α<sub>i</sub>·S<sub>i</sub>) / ΣS<sub>i</sub></p>
@@ -656,10 +665,13 @@
       <h3>Sort values into terms</h3>
       <p class="hint">Paste the measured values; they are assigned biggest→smallest as
          SEL, L<sub>1</sub>, L<sub>eq</sub>, L<sub>99</sub>.</p>
+      <div class="lt-grid" data-target="sort-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one value per line)</summary>
       <textarea id="sort-list" rows="4">93.5
 31.5
 84.4
 102.5</textarea>
+      <button type="button" data-applygrid="sort-list">Apply to grid</button></details>
       <button onclick="doSort()">Assign</button>
       <div id="sort-out" class="result"></div>
     </div>
@@ -775,7 +787,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=14"></script>
-<script src="app.js?v=14"></script>
+<script src="data.js?v=15"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

@@ -921,9 +921,13 @@ function buildRefTable() {
    (kept hidden inside a collapsible "bulk paste" box) so all the compute
    functions keep reading the same comma-separated lines unchanged. */
 const GRID_CONFIG = {
-  'leq-list':  [{ h: 'Level dB(A)', t: 'number' }, { h: 'Time', t: 'text', ph: '0.25 or 15 min' }],
-  'dose-list': [{ h: 'Level dB(A)', t: 'number' }, { h: 'Time', t: 'text', ph: '0.25 or 15 min' }],
-  'evt-list':  [{ h: 'Level dB(A)', t: 'number' }, { h: 'Event time', t: 'text', ph: '12 s' }, { h: 'No. events', t: 'number' }],
+  'leq-list':     [{ h: 'Level dB(A)', t: 'number' }, { h: 'Time', t: 'text', ph: '0.25 or 15 min' }],
+  'dose-list':    [{ h: 'Level dB(A)', t: 'number' }, { h: 'Time', t: 'text', ph: '0.25 or 15 min' }],
+  'evt-list':     [{ h: 'Level dB(A)', t: 'number' }, { h: 'Event time', t: 'text', ph: '12 s' }, { h: 'No. events', t: 'number' }],
+  'combine-list': [{ h: 'Level dB', t: 'number' }],
+  'rms-list':     [{ h: 'RMS pressure (Pa)', t: 'number' }],
+  'aa-list':      [{ h: 'Area S (m²)', t: 'number' }, { h: 'α', t: 'number' }],
+  'sort-list':    [{ h: 'Value dB', t: 'number' }],
 };
 function gridRowsFromText(text, ncols) {
   const rows = text.trim().split('\n').map(l => l.trim()).filter(l => l.length)
