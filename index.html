@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=12">
+<link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
 <header>
@@ -246,11 +246,15 @@
       <label>At distance r₁ (m) <input id="dist-r1" type="number" value="6.5" step="any"></label>
       <label>New distance r₂ (m) <input id="dist-r2" type="number" value="65" step="any"></label>
     </div>
+    <div class="row">
+      <label>+ extra source at r₁ (dB, optional) <input id="dist-extra" type="number" step="any" placeholder="e.g. background 89 — combined before spreading"></label>
+    </div>
     <button onclick="doDistance()">Compute</button>
     <div id="dist-out" class="result"></div>
     <p class="note">
       Point (spherical): L₂ = L₁ − 20·log<sub>10</sub>(r₂/r₁) &nbsp;·&nbsp;
-      Line (cylindrical): L₂ = L₁ − 10·log<sub>10</sub>(r₂/r₁)</p>
+      Line (cylindrical): L₂ = L₁ − 10·log<sub>10</sub>(r₂/r₁)<br>
+      Optional extra source is energy-combined with L₁ at r₁ first: L₁ ← 10·log<sub>10</sub>(10<sup>L₁/10</sup> + 10<sup>L_extra/10</sup>)</p>
   </div>
 
   <div class="card">
@@ -762,7 +766,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=12"></script>
-<script src="app.js?v=12"></script>
+<script src="data.js?v=13"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

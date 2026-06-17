@@ -249,22 +249,34 @@ function doOneOfN() {
 
 /* ---------------- Distance / spreading ---------------- */
 function doDistance() {
-  const L1 = Number($('dist-L1').value), r1 = Number($('dist-r1').value), r2 = Number($('dist-r2').value);
+  let L1 = Number($('dist-L1').value);
+  const r1 = Number($('dist-r1').value), r2 = Number($('dist-r2').value);
   if (!(r1 > 0) || !(r2 > 0)) return show('dist-out', 'Distances must be > 0.', 'err');
+  // Optional: fold an extra source (e.g. background) into L₁ at r₁ before spreading.
+  const extraRaw = $('dist-extra').value.trim();
+  const steps = [];
+  if (extraRaw.length) {
+    const extra = Number(extraRaw);
+    if (isNaN(extra)) return show('dist-out', 'Extra source level must be a number (or left blank).', 'err');
+    const L1c = dBsum([L1, extra]);
+    steps.push(`Combine at r₁: L₁ = 10·log₁₀(10^(${fmt(L1)}/10) + 10^(${fmt(extra)}/10)) = <b>${fmt(L1c, 2)} dB</b>`);
+    L1 = L1c;
+  }
   const ratio = lg(r2 / r1);
   const pt = L1 - 20 * ratio;   // point / spherical
   const ln = L1 - 10 * ratio;   // line / cylindrical
+  steps.push(
+    `log₁₀(r₂/r₁) = log₁₀(${fmt(r2)}/${fmt(r1)}) = ${fmt(ratio, 4)}`,
+    `Point: L₂ = L₁ − 20·log₁₀(r₂/r₁) = ${fmt(L1)} − 20·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(20 * ratio)} = <b>${fmt(pt)} dB</b>`,
+    `Line:  L₂ = L₁ − 10·log₁₀(r₂/r₁) = ${fmt(L1)} − 10·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(10 * ratio)} = <b>${fmt(ln)} dB</b>`,
+  );
   show('dist-out',
     `<table class="bands">
        <tr><th>Source type</th><th>Spreading</th><th>L₂ at ${fmt(r2)} m</th></tr>
        <tr><td>Point (isolated vehicle)</td><td>−6 dB/doubling</td><td><b>${fmt(pt)} dB</b></td></tr>
        <tr><td>Line (continuous traffic)</td><td>−3 dB/doubling</td><td><b>${fmt(ln)} dB</b></td></tr>
      </table>` +
-    work([
-      `log₁₀(r₂/r₁) = log₁₀(${fmt(r2)}/${fmt(r1)}) = ${fmt(ratio, 4)}`,
-      `Point: L₂ = L₁ − 20·log₁₀(r₂/r₁) = ${fmt(L1)} − 20·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(20 * ratio)} = <b>${fmt(pt)} dB</b>`,
-      `Line:  L₂ = L₁ − 10·log₁₀(r₂/r₁) = ${fmt(L1)} − 10·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(10 * ratio)} = <b>${fmt(ln)} dB</b>`,
-    ]));
+    work(steps));
 }
 function doInvDistance() {
   const L1 = Number($('invd-L1').value), L2 = Number($('invd-L2').value), dr = Number($('invd-dr').value);
