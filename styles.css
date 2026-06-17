@@ -80,16 +80,25 @@ footer{color:var(--muted);font-size:.82rem;padding:24px 18px;border-top:1px soli
 
 /* Level / Time row editor (grid input) */
 .lt-grid{margin:6px 0}
-.lt-grid table{border-collapse:collapse;width:auto;margin:0}
-.lt-grid th{text-align:left;font-size:.76rem;font-weight:600;color:var(--muted);padding:2px 6px 4px}
-.lt-grid td{padding:2px 4px;border:none}
-.lt-grid input{padding:6px 9px;font-size:.95rem;width:8.5em}
-.lt-grid .rm{background:transparent;color:var(--muted);border:1px solid var(--line);
+.lt-groups{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.lt-group{border:1px solid var(--line);border-radius:9px;padding:8px 10px 10px;background:#0b1420}
+.lt-group .glabel{width:100%;max-width:11em;margin:0 0 7px;padding:4px 8px;font-size:.85rem;font-weight:600}
+.lt-group table{border-collapse:collapse;width:auto;margin:0}
+.lt-group th{text-align:left;font-size:.76rem;font-weight:600;color:var(--muted);padding:2px 6px 4px}
+.lt-group td{padding:2px 4px;border:none}
+.lt-group input.cell{padding:6px 9px;font-size:.95rem;width:8.5em}
+.lt-group .rm{background:transparent;color:var(--muted);border:1px solid var(--line);
   padding:3px 9px;margin:0;font-weight:700;line-height:1;border-radius:6px}
-.lt-grid .rm:hover{color:#ff8a8a;border-color:#ff8a8a;filter:none}
-.lt-grid .addrow{background:transparent;color:var(--accent2);border:1px dashed var(--line);
-  padding:6px 12px;margin:6px 0 0;font-weight:600}
-.lt-grid .addrow:hover{border-color:var(--accent2);filter:none}
+.lt-group .rm:hover{color:#ff8a8a;border-color:#ff8a8a;filter:none}
+.lt-group .addrow{background:transparent;color:var(--accent2);border:1px dashed var(--line);
+  padding:5px 12px;margin:6px 0 0;font-weight:600;font-size:.85rem;display:block}
+.lt-group .addrow:hover{border-color:var(--accent2);filter:none}
+.lt-group .rmcol{background:transparent;color:var(--muted);border:1px solid var(--line);
+  padding:3px 9px;margin:6px 0 0;font-size:.8rem;font-weight:600;display:block}
+.lt-group .rmcol:hover{color:#ff8a8a;border-color:#ff8a8a;filter:none}
+.lt-grid .addcol{background:transparent;color:var(--accent);border:1px dashed var(--accent);
+  padding:7px 14px;margin:10px 0 0;font-weight:600}
+.lt-grid .addcol:hover{filter:brightness(1.15)}
 details.bulk{margin:8px 0 0}
 details.bulk summary{cursor:pointer;color:var(--muted);font-size:.85rem;user-select:none}
 details.bulk summary:hover{color:var(--ink)}

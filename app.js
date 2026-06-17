@@ -934,18 +934,25 @@ function gridRowsFromText(text, ncols) {
     .map(l => { const c = l.split(',').map(s => s.trim()); while (c.length < ncols) c.push(''); return c.slice(0, ncols); });
   return rows.length ? rows : [Array(ncols).fill('')];
 }
+// Flatten every column-group's rows back into the linked textarea (the format
+// all the compute functions still read). Labels are cosmetic and not exported.
 function syncTextarea(grid) {
   const lines = [];
-  grid.querySelectorAll('tbody tr').forEach(tr => {
-    const cells = [...tr.querySelectorAll('input')].map(i => i.value.trim());
+  grid.querySelectorAll('.lt-group tbody tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('input.cell')].map(i => i.value.trim());
     if (cells.some(c => c !== '')) lines.push(cells.join(', '));
   });
   $(grid.dataset.target).value = lines.join('\n');
 }
-function addGridRow(grid, cols, values) {
-  const tb = grid.querySelector('tbody'), tr = document.createElement('tr');
+function refreshCols(grid) {
+  const gs = grid.querySelectorAll('.lt-group');
+  gs.forEach(g => { const b = g.querySelector('.rmcol'); if (b) b.style.display = gs.length > 1 ? 'block' : 'none'; });
+}
+function addGridRow(group, cols, values) {
+  const grid = group.closest('.lt-grid'), tb = group.querySelector('tbody'), tr = document.createElement('tr');
   cols.forEach((col, i) => {
     const td = document.createElement('td'), inp = document.createElement('input');
+    inp.className = 'cell';
     inp.type = col.t === 'number' ? 'number' : 'text';
     if (col.t === 'number') inp.step = 'any';
     if (col.ph) inp.placeholder = col.ph;
@@ -955,24 +962,44 @@ function addGridRow(grid, cols, values) {
   });
   const td = document.createElement('td'), rm = document.createElement('button');
   rm.type = 'button'; rm.className = 'rm'; rm.textContent = '×'; rm.title = 'Remove row';
-  rm.onclick = () => { tr.remove(); if (!tb.querySelector('tr')) addGridRow(grid, cols); syncTextarea(grid); };
+  rm.onclick = () => { tr.remove(); if (!tb.querySelector('tr')) addGridRow(group, cols); syncTextarea(grid); };
   td.appendChild(rm); tr.appendChild(td); tb.appendChild(tr);
+}
+function addGroup(grid, cols, rows, label) {
+  const groups = grid.querySelector('.lt-groups'), g = document.createElement('div');
+  g.className = 'lt-group';
+  const lab = document.createElement('input');
+  lab.className = 'glabel'; lab.type = 'text'; lab.placeholder = 'Label (optional)';
+  if (label) lab.value = label;
+  g.appendChild(lab);
+  const table = document.createElement('table'), thead = document.createElement('thead'), htr = document.createElement('tr');
+  cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.h; htr.appendChild(th); });
+  htr.appendChild(document.createElement('th'));
+  thead.appendChild(htr); table.appendChild(thead);
+  const tb = document.createElement('tbody'); table.appendChild(tb); g.appendChild(table);
+  const add = document.createElement('button');
+  add.type = 'button'; add.className = 'addrow'; add.textContent = '+ Add row';
+  add.onclick = () => addGridRow(g, cols);
+  g.appendChild(add);
+  const rmc = document.createElement('button');
+  rmc.type = 'button'; rmc.className = 'rmcol'; rmc.textContent = '× Remove column';
+  rmc.onclick = () => { g.remove(); if (!groups.querySelector('.lt-group')) addGroup(grid, cols); refreshCols(grid); syncTextarea(grid); };
+  g.appendChild(rmc);
+  groups.appendChild(g);
+  (rows && rows.length ? rows : [Array(cols.length).fill('')]).forEach(v => addGridRow(g, cols, v));
+  refreshCols(grid);
 }
 function buildGrid(targetId) {
   const grid = document.querySelector(`.lt-grid[data-target="${targetId}"]`);
   if (!grid) return;
   const cols = GRID_CONFIG[targetId], ta = $(targetId);
   grid.innerHTML = '';
-  const table = document.createElement('table'), thead = document.createElement('thead'), htr = document.createElement('tr');
-  cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.h; htr.appendChild(th); });
-  htr.appendChild(document.createElement('th'));
-  thead.appendChild(htr); table.appendChild(thead);
-  const tb = document.createElement('tbody'); table.appendChild(tb); grid.appendChild(table);
-  gridRowsFromText(ta.value, cols.length).forEach(vals => addGridRow(grid, cols, vals));
-  const add = document.createElement('button');
-  add.type = 'button'; add.className = 'addrow'; add.textContent = '+ Add row';
-  add.onclick = () => addGridRow(grid, cols);
-  grid.appendChild(add);
+  const groups = document.createElement('div'); groups.className = 'lt-groups'; grid.appendChild(groups);
+  addGroup(grid, cols, gridRowsFromText(ta.value, cols.length));
+  const addc = document.createElement('button');
+  addc.type = 'button'; addc.className = 'addcol'; addc.textContent = '+ Add column';
+  addc.onclick = () => addGroup(grid, cols);
+  grid.appendChild(addc);
   syncTextarea(grid);
 }
 function initGrids() {
