@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=13">
+<link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
 <header>
@@ -467,10 +467,13 @@
        — <code>96, 15 min</code>, <code>91, 2 h</code>, <code>99, 30 s</code> — and units can be mixed
        freely. A bare number (e.g. <code>3.5</code>) uses the default unit below. For sound-level-meter
        periods (e.g. 30–70 s) enter the period <em>length</em> (<code>40 s</code>).</p>
+    <div class="lt-grid" data-target="leq-list"></div>
+    <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>level, duration</code>)</summary>
     <textarea id="leq-list" rows="6" placeholder="96, 15 min&#10;91, 2 h&#10;99, 6 min&#10;86, 2.5 h">96, 15 min
 91, 2 h
 99, 6 min
 86, 2.5 h</textarea>
+    <button type="button" data-applygrid="leq-list">Apply to grid</button></details>
     <div class="row">
       <label>Default unit for bare numbers
         <select id="leq-unit">
@@ -487,9 +490,12 @@
     <h3>L<sub>eq</sub> from discrete events (e.g. train / vehicle pass-bys)</h3>
     <p class="hint">One row per event type: <code>level, single-event duration, number of events</code>.
        Set the reference period in the <em>same</em> time unit as the durations.</p>
+    <div class="lt-grid" data-target="evt-list"></div>
+    <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>level, duration, count</code>)</summary>
     <textarea id="evt-list" rows="5" placeholder="86, 12 s, 120&#10;79, 18 s, 200&#10;78, 24 s, 80">86, 12 s, 120
 79, 18 s, 200
 78, 24 s, 80</textarea>
+    <button type="button" data-applygrid="evt-list">Apply to grid</button></details>
     <div class="row">
       <label>Default unit for bare numbers
         <select id="evt-unit">
@@ -513,10 +519,13 @@
     <h3>Worker shift exposure</h3>
     <p class="hint">One row per phase: <code>level dB(A), duration</code>. Durations may carry a unit
        (<code>96, 15 min</code>, <code>91, 2 h</code>) and may be mixed; bare numbers use the default unit.</p>
+    <div class="lt-grid" data-target="dose-list"></div>
+    <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>level, duration</code>)</summary>
     <textarea id="dose-list" rows="5">96, 15 min
 91, 2 h
 99, 6 min
 86, 2.5 h</textarea>
+    <button type="button" data-applygrid="dose-list">Apply to grid</button></details>
     <div class="row">
       <label>Default unit for bare numbers
         <select id="dose-unit">
@@ -766,7 +775,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=13"></script>
-<script src="app.js?v=13"></script>
+<script src="data.js?v=14"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

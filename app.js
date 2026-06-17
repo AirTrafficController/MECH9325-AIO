@@ -916,10 +916,74 @@ function buildRefTable() {
   $('ref-table').innerHTML = h;
 }
 
+/* ---------------- Level/Time row editor (grid input) ----------------
+   A spreadsheet-style editor that writes back into the existing textarea
+   (kept hidden inside a collapsible "bulk paste" box) so all the compute
+   functions keep reading the same comma-separated lines unchanged. */
+const GRID_CONFIG = {
+  'leq-list':  [{ h: 'Level dB(A)', t: 'number' }, { h: 'Time', t: 'text', ph: '0.25 or 15 min' }],
+  'dose-list': [{ h: 'Level dB(A)', t: 'number' }, { h: 'Time', t: 'text', ph: '0.25 or 15 min' }],
+  'evt-list':  [{ h: 'Level dB(A)', t: 'number' }, { h: 'Event time', t: 'text', ph: '12 s' }, { h: 'No. events', t: 'number' }],
+};
+function gridRowsFromText(text, ncols) {
+  const rows = text.trim().split('\n').map(l => l.trim()).filter(l => l.length)
+    .map(l => { const c = l.split(',').map(s => s.trim()); while (c.length < ncols) c.push(''); return c.slice(0, ncols); });
+  return rows.length ? rows : [Array(ncols).fill('')];
+}
+function syncTextarea(grid) {
+  const lines = [];
+  grid.querySelectorAll('tbody tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('input')].map(i => i.value.trim());
+    if (cells.some(c => c !== '')) lines.push(cells.join(', '));
+  });
+  $(grid.dataset.target).value = lines.join('\n');
+}
+function addGridRow(grid, cols, values) {
+  const tb = grid.querySelector('tbody'), tr = document.createElement('tr');
+  cols.forEach((col, i) => {
+    const td = document.createElement('td'), inp = document.createElement('input');
+    inp.type = col.t === 'number' ? 'number' : 'text';
+    if (col.t === 'number') inp.step = 'any';
+    if (col.ph) inp.placeholder = col.ph;
+    inp.value = values && values[i] != null ? values[i] : '';
+    inp.addEventListener('input', () => syncTextarea(grid));
+    td.appendChild(inp); tr.appendChild(td);
+  });
+  const td = document.createElement('td'), rm = document.createElement('button');
+  rm.type = 'button'; rm.className = 'rm'; rm.textContent = '×'; rm.title = 'Remove row';
+  rm.onclick = () => { tr.remove(); if (!tb.querySelector('tr')) addGridRow(grid, cols); syncTextarea(grid); };
+  td.appendChild(rm); tr.appendChild(td); tb.appendChild(tr);
+}
+function buildGrid(targetId) {
+  const grid = document.querySelector(`.lt-grid[data-target="${targetId}"]`);
+  if (!grid) return;
+  const cols = GRID_CONFIG[targetId], ta = $(targetId);
+  grid.innerHTML = '';
+  const table = document.createElement('table'), thead = document.createElement('thead'), htr = document.createElement('tr');
+  cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.h; htr.appendChild(th); });
+  htr.appendChild(document.createElement('th'));
+  thead.appendChild(htr); table.appendChild(thead);
+  const tb = document.createElement('tbody'); table.appendChild(tb); grid.appendChild(table);
+  gridRowsFromText(ta.value, cols.length).forEach(vals => addGridRow(grid, cols, vals));
+  const add = document.createElement('button');
+  add.type = 'button'; add.className = 'addrow'; add.textContent = '+ Add row';
+  add.onclick = () => addGridRow(grid, cols);
+  grid.appendChild(add);
+  syncTextarea(grid);
+}
+function initGrids() {
+  Object.keys(GRID_CONFIG).forEach(buildGrid);
+  // "Apply to grid" buttons in the bulk-paste box rebuild the grid from pasted text.
+  document.querySelectorAll('button[data-applygrid]').forEach(b => {
+    b.onclick = () => buildGrid(b.dataset.applygrid);
+  });
+}
+
 /* ---------------- init ---------------- */
 window.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initSearch();
   buildWeightTable();
   buildRefTable();
+  initGrids();
 });

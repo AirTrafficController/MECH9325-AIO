@@ -77,3 +77,21 @@ code{background:#0c1622;border:1px solid var(--line);border-radius:5px;padding:1
 footer{color:var(--muted);font-size:.82rem;padding:24px 18px;border-top:1px solid var(--line)}
 
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+/* Level / Time row editor (grid input) */
+.lt-grid{margin:6px 0}
+.lt-grid table{border-collapse:collapse;width:auto;margin:0}
+.lt-grid th{text-align:left;font-size:.76rem;font-weight:600;color:var(--muted);padding:2px 6px 4px}
+.lt-grid td{padding:2px 4px;border:none}
+.lt-grid input{padding:6px 9px;font-size:.95rem;width:8.5em}
+.lt-grid .rm{background:transparent;color:var(--muted);border:1px solid var(--line);
+  padding:3px 9px;margin:0;font-weight:700;line-height:1;border-radius:6px}
+.lt-grid .rm:hover{color:#ff8a8a;border-color:#ff8a8a;filter:none}
+.lt-grid .addrow{background:transparent;color:var(--accent2);border:1px dashed var(--line);
+  padding:6px 12px;margin:6px 0 0;font-weight:600}
+.lt-grid .addrow:hover{border-color:var(--accent2);filter:none}
+details.bulk{margin:8px 0 0}
+details.bulk summary{cursor:pointer;color:var(--muted);font-size:.85rem;user-select:none}
+details.bulk summary:hover{color:var(--ink)}
+details.bulk textarea{margin-top:8px}
+details.bulk button{margin-top:8px}
