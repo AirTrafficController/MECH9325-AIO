@@ -984,6 +984,15 @@ function addGroup(grid, cols, rows, label) {
   add.type = 'button'; add.className = 'addrow'; add.textContent = '+ Add row';
   add.onclick = () => addGridRow(g, cols);
   g.appendChild(add);
+  const dup = document.createElement('button');
+  dup.type = 'button'; dup.className = 'dupcol'; dup.textContent = '⧉ Duplicate';
+  dup.title = 'Copy this column into a new one (e.g. double the time intervals)';
+  dup.onclick = () => {
+    const rows = [...g.querySelectorAll('tbody tr')].map(tr => [...tr.querySelectorAll('input.cell')].map(i => i.value));
+    addGroup(grid, cols, rows, lab.value ? lab.value + ' (copy)' : '');
+    syncTextarea(grid);
+  };
+  g.appendChild(dup);
   const rmc = document.createElement('button');
   rmc.type = 'button'; rmc.className = 'rmcol'; rmc.textContent = '× Remove column';
   rmc.onclick = () => { g.remove(); if (!groups.querySelector('.lt-group')) addGroup(grid, cols); refreshCols(grid); syncTextarea(grid); };

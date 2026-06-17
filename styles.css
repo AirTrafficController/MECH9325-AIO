@@ -96,6 +96,9 @@ footer{color:var(--muted);font-size:.82rem;padding:24px 18px;border-top:1px soli
 .lt-group .rmcol{background:transparent;color:var(--muted);border:1px solid var(--line);
   padding:3px 9px;margin:6px 0 0;font-size:.8rem;font-weight:600;display:block}
 .lt-group .rmcol:hover{color:#ff8a8a;border-color:#ff8a8a;filter:none}
+.lt-group .dupcol{background:transparent;color:var(--accent2);border:1px solid var(--line);
+  padding:3px 9px;margin:6px 0 0;font-size:.8rem;font-weight:600;display:block}
+.lt-group .dupcol:hover{border-color:var(--accent2);filter:none}
 .lt-grid .addcol{background:transparent;color:var(--accent);border:1px dashed var(--accent);
   padding:7px 14px;margin:10px 0 0;font-weight:600}
 .lt-grid .addcol:hover{filter:brightness(1.15)}
