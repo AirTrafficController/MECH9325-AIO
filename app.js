@@ -81,7 +81,7 @@ const TAB_TAGS = {
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
-  dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor',
+  dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere surface area reference source mean spl',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
@@ -264,6 +264,26 @@ function doDistance() {
       `log₁₀(r₂/r₁) = log₁₀(${fmt(r2)}/${fmt(r1)}) = ${fmt(ratio, 4)}`,
       `Point: L₂ = L₁ − 20·log₁₀(r₂/r₁) = ${fmt(L1)} − 20·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(20 * ratio)} = <b>${fmt(pt)} dB</b>`,
       `Line:  L₂ = L₁ − 10·log₁₀(r₂/r₁) = ${fmt(L1)} − 10·(${fmt(ratio, 4)}) = ${fmt(L1)} − ${fmt(10 * ratio)} = <b>${fmt(ln)} dB</b>`,
+    ]));
+}
+function doInvDistance() {
+  const L1 = Number($('invd-L1').value), L2 = Number($('invd-L2').value), dr = Number($('invd-dr').value);
+  if (!(dr > 0)) return show('invd-out', 'Extra distance Δr must be > 0.', 'err');
+  const dL = L1 - L2;
+  if (!(dL > 0)) return show('invd-out', 'Near level L₁ must exceed far level L₂.', 'err');
+  // Level falls by ΔL over the extra distance Δr; invert the spreading law for the near distance y.
+  const Rp = 10 ** (dL / 20), Rl = 10 ** (dL / 10);   // r₂/r₁ for point / line spreading
+  const yp = dr / (Rp - 1), yl = dr / (Rl - 1);
+  show('invd-out',
+    `<table class="bands">
+       <tr><th>Source type</th><th>Spreading</th><th>Near distance y</th></tr>
+       <tr><td>Point (e.g. rifle, single vehicle)</td><td>−6 dB/doubling</td><td><b>${fmt(yp, 3)} m</b></td></tr>
+       <tr><td>Line (continuous traffic)</td><td>−3 dB/doubling</td><td><b>${fmt(yl, 3)} m</b></td></tr>
+     </table>` +
+    work([
+      `ΔL = L₁ − L₂ = ${fmt(L1)} − ${fmt(L2)} = ${fmt(dL)} dB`,
+      `Point: ΔL = 20·log₁₀((y+Δr)/y) ⇒ y = Δr/(10^(ΔL/20) − 1) = ${fmt(dr)}/(${sci(Rp, 5)} − 1) = <b>${fmt(yp, 3)} m</b>`,
+      `Line:  ΔL = 10·log₁₀((y+Δr)/y) ⇒ y = Δr/(10^(ΔL/10) − 1) = ${fmt(dr)}/(${sci(Rl, 5)} − 1) = <b>${fmt(yl, 3)} m</b>`,
     ]));
 }
 

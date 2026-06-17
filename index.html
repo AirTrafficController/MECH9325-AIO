@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=11">
+<link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
 <header>
@@ -251,6 +251,20 @@
     <p class="note">
       Point (spherical): L₂ = L₁ − 20·log<sub>10</sub>(r₂/r₁) &nbsp;·&nbsp;
       Line (cylindrical): L₂ = L₁ − 10·log<sub>10</sub>(r₂/r₁)</p>
+  </div>
+
+  <div class="card">
+    <h3>Solve for distance from two levels</h3>
+    <p class="hint">Two SPLs measured along the same line: L₁ at the near point (distance y from the source)
+       and L₂ a further Δr away. Back out the near distance y (e.g. a rifle = point source).</p>
+    <div class="row">
+      <label>Near level L₁ (dB) <input id="invd-L1" type="number" value="128" step="any"></label>
+      <label>Far level L₂ (dB) <input id="invd-L2" type="number" value="98" step="any"></label>
+      <label>Extra distance Δr (m) <input id="invd-dr" type="number" value="25.2" step="any"></label>
+    </div>
+    <button onclick="doInvDistance()">Solve y</button>
+    <div id="invd-out" class="result"></div>
+    <p class="note">y = Δr / (10<sup>ΔL/20</sup> − 1) point &nbsp;·&nbsp; y = Δr / (10<sup>ΔL/10</sup> − 1) line &nbsp;·&nbsp; ΔL = L₁−L₂</p>
   </div>
 
   <div class="card">
@@ -748,7 +762,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<script src="data.js?v=12"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>
