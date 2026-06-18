@@ -43,6 +43,18 @@ function fmtSeconds(sec) {
   if (sec >= 60) return `${fmt(sec / 60, 3)} min`;
   return `${fmt(sec, 3)} s`;
 }
+// Pretty-print a duration given in hours as "H h M min" (or s for tiny values).
+function fmtHM(hours) {
+  if (!isFinite(hours)) return '∞';
+  let s = Math.round(hours * 3600);
+  const h = Math.floor(s / 3600); s -= h * 3600;
+  const m = Math.floor(s / 60); s -= m * 60;
+  const parts = [];
+  if (h) parts.push(`${h} h`);
+  if (m) parts.push(`${m} min`);
+  if (s && !h) parts.push(`${s} s`);
+  return parts.length ? parts.join(' ') : '0 min';
+}
 
 // Render a step-by-step "Working" block from an array of HTML lines.
 function work(steps) {
@@ -459,7 +471,7 @@ function doDose() {
      Total exposure time = ${fmt(sumT)} h<br>
      Noise dose = <b>${fmt(dose * 100, 1)} %</b> &nbsp;(100 % = limit)<br>
      Exceeds ${fmt(Lc)} dB(A) limit? <b class="${exceed ? 'bad' : 'good'}">${exceed ? 'YES' : 'No'}</b><br>
-     Max permissible time at this L<sub>Aeq</sub> = <b>${fmt(Tmax, 4)} h</b>` +
+     Max permissible time at this L<sub>Aeq</sub> = <b>${fmt(Tmax, 3)} h</b> (= ${fmtHM(Tmax)})` +
     work([
       `L_Aeq,T = 10·log₁₀( (1/T)·Σ tᵢ·10^(Lᵢ/10) ),  T = Σtᵢ = ${fmt(sumT, 4)} h`,
       `= 10·log₁₀( (1/${fmt(sumT, 4)})·( ${eterms.join(' + ')} ) ) = <b>${fmt(leqT, 3)} dB(A)</b>`,
@@ -479,7 +491,7 @@ function doMaxTime() {
   const T = Tc / 2 ** ((L - Lc) / q);
   const exceed = L > Lc;
   show('mpt-out',
-    `T = <b>${fmt(T, 4)} h</b> &nbsp;(= ${fmt(T * 60, 1)} min) — level ${exceed ? 'exceeds' : 'is within'} the ${fmt(Lc)} dB(A) criterion.` +
+    `T = <b>${fmt(T, 3)} h</b> &nbsp;(= ${fmtHM(T)}) — level ${exceed ? 'exceeds' : 'is within'} the ${fmt(Lc)} dB(A) criterion.` +
     work([
       `T = T_c / 2^((L − L_c)/q)`,
       `= ${fmt(Tc)} / 2^((${fmt(L)} − ${fmt(Lc)})/${fmt(q)})`,
