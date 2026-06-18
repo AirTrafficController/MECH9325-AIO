@@ -458,7 +458,7 @@ function doDose() {
     'Each row needs: level dB(A), duration (e.g. <code>96, 15 min</code>).', 'err');
   const leq = 10 * lg(energy / Tc);            // normalised to criterion period
   const leqT = 10 * lg(energy / sumT);         // equivalent level over the actual total time T
-  const Tmax = Tc / 2 ** ((leq - Lc) / q);     // permissible time at this Leq
+  const Tmax = Tc / 2 ** ((leqT - Lc) / q);    // permissible time at the actual exposure level L_Aeq,T
   const exceed = leq > Lc;
   const eterms = rows.map(r => `${fmt(parseTime(r[1], def) / 3600, 3)}·10^(${fmt(Number(r[0]))}/10)`);
   const dterms = rows.map(r => {
@@ -471,7 +471,7 @@ function doDose() {
      Total exposure time = ${fmt(sumT)} h<br>
      Noise dose = <b>${fmt(dose * 100, 1)} %</b> &nbsp;(100 % = limit)<br>
      Exceeds ${fmt(Lc)} dB(A) limit? <b class="${exceed ? 'bad' : 'good'}">${exceed ? 'YES' : 'No'}</b><br>
-     Max permissible time at this L<sub>Aeq</sub> = <b>${fmt(Tmax, 3)} h</b> (= ${fmtHM(Tmax)})` +
+     Max permissible time at L<sub>Aeq,T</sub> = <b>${fmt(Tmax, 3)} h</b> (= ${fmtHM(Tmax)})` +
     work([
       `L_Aeq,T = 10·log₁₀( (1/T)·Σ tᵢ·10^(Lᵢ/10) ),  T = Σtᵢ = ${fmt(sumT, 4)} h`,
       `= 10·log₁₀( (1/${fmt(sumT, 4)})·( ${eterms.join(' + ')} ) ) = <b>${fmt(leqT, 3)} dB(A)</b>`,
@@ -479,7 +479,7 @@ function doDose() {
       `= L_Aeq,T + 10·log₁₀(T/T_c) = ${fmt(leqT, 3)} + 10·log₁₀(${fmt(sumT, 4)}/${fmt(Tc)}) = <b>${fmt(leq, 3)} dB(A)</b>`,
       `Allowed time Tᵢ = T_c / 2^((Lᵢ−${fmt(Lc)})/${fmt(q)})`,
       `Dose = Σ tᵢ/Tᵢ = ${dterms.join(' + ')} = ${fmt(dose, 4)} = <b>${fmt(dose * 100, 1)} %</b>`,
-      `T_max = T_c / 2^((L_Aeq−L_c)/q) = ${fmt(Tc)} / 2^((${fmt(leq, 2)}−${fmt(Lc)})/${fmt(q)}) = <b>${fmt(Tmax, 4)} h</b>`,
+      `T_max = T_c / 2^((L_Aeq,T−L_c)/q) = ${fmt(Tc)} / 2^((${fmt(leqT, 2)}−${fmt(Lc)})/${fmt(q)}) = <b>${fmt(Tmax, 3)} h</b> (= ${fmtHM(Tmax)})`,
     ]),
     exceed ? 'warn' : 'ok');
 }
