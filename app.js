@@ -944,7 +944,8 @@ function gridRowsFromText(text, ncols) {
 // all the compute functions still read). Labels are cosmetic and not exported.
 function syncTextarea(grid) {
   const lines = [];
-  grid.querySelectorAll('.lt-group tbody tr').forEach(tr => {
+  // Only active (non-disabled) column groups feed the calculation.
+  grid.querySelectorAll('.lt-group:not(.off) tbody tr').forEach(tr => {
     const cells = [...tr.querySelectorAll('input.cell')].map(i => i.value.trim());
     if (cells.some(c => c !== '')) lines.push(cells.join(', '));
   });
@@ -974,10 +975,15 @@ function addGridRow(group, cols, values) {
 function addGroup(grid, cols, rows, label) {
   const groups = grid.querySelector('.lt-groups'), g = document.createElement('div');
   g.className = 'lt-group';
+  const head = document.createElement('div'); head.className = 'ghead';
+  const act = document.createElement('label'); act.className = 'gactive';
+  const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
+  cb.addEventListener('change', () => { g.classList.toggle('off', !cb.checked); syncTextarea(grid); });
+  act.append(cb, ' Active');
   const lab = document.createElement('input');
   lab.className = 'glabel'; lab.type = 'text'; lab.placeholder = 'Label (optional)';
   if (label) lab.value = label;
-  g.appendChild(lab);
+  head.append(act, lab); g.appendChild(head);
   const table = document.createElement('table'), thead = document.createElement('thead'), htr = document.createElement('tr');
   cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.h; htr.appendChild(th); });
   htr.appendChild(document.createElement('th'));
