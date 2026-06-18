@@ -78,7 +78,7 @@ const TABS = [
 // Search keywords/tags per tab (lowercase). Matched against the typed query.
 const TAB_TAGS = {
   levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts psd power spectral density pa2/hz pa^2/hz integrate area trapezoid band linear flat mean square spectrum frequency limits',
-  combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent',
+  combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent max maximum machines permitted limit how many under night allowed',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate',
@@ -213,6 +213,25 @@ function doLargerError() {
       `p_tot = √(p₁² + p₂²) = p₁·√(1 + r²) = p₁·√(1 + ${sci(r * r, 4)}) = <b>${sci(ptot, 5)}·p₁</b>`,
       `Error = (p₁ − p_tot)/p_tot = 1/√(1 + r²) − 1`,
       `= 1/${sci(ptot, 5)} − 1 = <b>${fmt(err, 2)} %</b> (negative ⇒ under-estimate)`,
+    ]));
+}
+function doMaxSources() {
+  const N1 = Number($('ms-n1').value), L1 = Number($('ms-L1').value), Lmax = Number($('ms-max').value);
+  if (!(N1 >= 1)) return show('ms-out', 'Current number of sources N₁ must be ≥ 1.', 'err');
+  const per = L1 - 10 * lg(N1);                  // level of one source
+  const Nexact = N1 * 10 ** ((Lmax - L1) / 10);  // N at exactly the limit
+  const N = Math.floor(Nexact + 1e-9);           // largest integer N within the limit
+  if (N < 1) return show('ms-out',
+    `Even one source (${fmt(per, 2)} dB) exceeds the ${fmt(Lmax)} dB limit.`, 'err');
+  const Ln = L1 + 10 * lg(N / N1), Ln1 = L1 + 10 * lg((N + 1) / N1);
+  show('ms-out',
+    `Max sources within limit = <b>${N}</b><br>
+     Level at ${N} = <b>${fmt(Ln, 2)} dB</b> (≤ ${fmt(Lmax)} ✓) · at ${N + 1} = ${fmt(Ln1, 2)} dB (✗)` +
+    work([
+      `One source: L₁ = L_tot − 10·log₁₀(N₁) = ${fmt(L1)} − 10·log₁₀(${fmt(N1)}) = ${fmt(per, 2)} dB`,
+      `Need L_tot + 10·log₁₀(N/N₁) ≤ ${fmt(Lmax)}  ⇒  N ≤ N₁·10^((L_max−L_tot)/10)`,
+      `= ${fmt(N1)}·10^((${fmt(Lmax)}−${fmt(L1)})/10) = ${fmt(N1)}·10^(${fmt((Lmax - L1) / 10, 3)}) = ${fmt(Nexact, 3)}`,
+      `Round down → <b>${N} sources</b> (combined level ${fmt(Ln, 2)} dB)`,
     ]));
 }
 

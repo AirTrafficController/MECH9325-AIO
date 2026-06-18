@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=20">
+<link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
 <header>
@@ -153,6 +153,20 @@
     <button onclick="doLargerError()">Compute error</button>
     <div id="err-out" class="result"></div>
     <p class="note">Error = (p₁ − p<sub>tot</sub>) / p<sub>tot</sub> = 1/√(1 + r²) − 1, &nbsp; r = p₂/p₁</p>
+  </div>
+
+  <div class="card">
+    <h3>Max sources under a limit</h3>
+    <p class="hint">N₁ identical sources currently give a measured total L<sub>tot</sub>; find the largest number
+       of those sources whose combined level stays at or below a limit (e.g. how many machines may run at night).</p>
+    <div class="row">
+      <label>Current number N₁ <input id="ms-n1" type="number" value="8" step="1" min="1"></label>
+      <label>Measured total L<sub>tot</sub> (dB) <input id="ms-L1" type="number" value="54" step="any"></label>
+      <label>Limit L<sub>max</sub> (dB) <input id="ms-max" type="number" value="50" step="any"></label>
+    </div>
+    <button onclick="doMaxSources()">Compute max N</button>
+    <div id="ms-out" class="result"></div>
+    <p class="note">N ≤ N₁·10<sup>(L<sub>max</sub> − L<sub>tot</sub>)/10</sup>, rounded down</p>
   </div>
 </section>
 
@@ -787,7 +801,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=20"></script>
-<script src="app.js?v=20"></script>
+<script src="data.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>
