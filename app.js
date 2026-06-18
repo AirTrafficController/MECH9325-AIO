@@ -368,17 +368,20 @@ function doLeq() {
   let T = parseTime($('leq-T').value, def);
   if (isNaN(T) || T <= 0) T = sumT;
   const leq = 10 * lg(energy / T);
+  const sel = 10 * lg(energy);   // SEL (L_AE): total energy normalised to 1 s (energy is already in s·ratio)
   // Build working using the original time unit for readability.
   const uf = TIME_UNITS[def];
   const terms = rows.map(r => `${fmt(parseTime(r[1], def) / uf, 3)}·10^(${fmt(Number(r[0]))}/10)`);
   show('leq-out',
-    `L<sub>eq</sub> = <b>${fmt(leq, 3)} dB</b> &nbsp;<span class="small">(Σt = ${fmtSeconds(sumT)}, T = ${fmtSeconds(T)})</span>` +
+    `L<sub>eq</sub> = <b>${fmt(leq, 3)} dB</b> &nbsp;<span class="small">(Σt = ${fmtSeconds(sumT)}, T = ${fmtSeconds(T)})</span><br>
+     SEL (L<sub>AE</sub>, energy over 1 s) = <b>${fmt(sel, 2)} dB</b>` +
     work([
       `L_eq = 10·log₁₀( (1/T)·Σ tᵢ·10^(Lᵢ/10) )   [times in ${def}]`,
       `= 10·log₁₀( (1/${fmt(T / uf, 3)})·( ${terms.join(' + ')} ) )`,
       `= 10·log₁₀( (1/${fmt(T / uf, 3)})·( ${sci(energy / uf, 5)} ) )`,
       `= 10·log₁₀( ${sci(energy / T, 5)} )`,
       `= <b>${fmt(leq, 3)} dB</b>`,
+      `SEL = 10·log₁₀( Σ tᵢ·10^(Lᵢ/10) / 1 s ) = L_eq + 10·log₁₀(T/1s) = ${fmt(leq, 3)} + 10·log₁₀(${fmt(T, 3)}) = <b>${fmt(sel, 2)} dB</b>`,
     ]));
 }
 function doEvents() {
