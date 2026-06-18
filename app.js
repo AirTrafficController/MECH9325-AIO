@@ -82,7 +82,7 @@ function show(id, html, cls = 'ok') {
 const TABS = [
   ['levels', 'Levels'], ['combine', 'Combine'], ['subtract', 'Subtract'],
   ['waves', 'Waves'], ['dist', 'Distance'], ['room', 'Room Acoustics'],
-  ['power', 'Sound Power'], ['duct', 'Duct → Voltage'], ['weight', 'Weighting'], ['leq', 'Leq'],
+  ['power', 'Sound Power'], ['duct', 'Duct → Voltage'], ['weight', 'Weighting'], ['bands', 'Band Workbench'], ['leq', 'Leq'],
   ['dose', 'Noise Dose'], ['loud', 'Loudness'], ['speech', 'Speech (PSIL)'],
   ['community', 'Community'], ['stats', 'Stats / SEL'], ['tl', 'Insulation (TL)'],
   ['muffler', 'Mufflers'], ['table', 'Tables'],
@@ -98,6 +98,7 @@ const TAB_TAGS = {
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere surface area reference source mean spl',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
+  bands: 'band workbench third octave to octave combine spls overall spl a-weighted dba one third 1/3 octave consecutive bands triplet convert all in one part a b spectrum analysis nine bands',
   leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq',
   dose: 'noise dose ohs oh&s occupational exposure limit 85 db permissible time exchange rate hearing shift worker percent percentage criterion',
   loud: 'loudness phon phons sone sones equal loudness contour conversion subjective hearing',
@@ -381,6 +382,54 @@ function doWeight() {
       `= 10·log₁₀( ${rows.map(r => `10^(${fmt(r.Lw)}/10)`).join(' + ')} )`,
       `= 10·log₁₀( ${sci(rows.reduce((a, r) => a + e10(r.Lw), 0), 5)} )`,
       `= <b>${fmt(wtd, 1)} ${tag}</b>`,
+    ]));
+}
+
+/* ---------------- Band Workbench ---------------- */
+function buildBandTable() {
+  let h = '<table class="bands"><tr><th>⅓-octave (Hz)</th><th>Band level (dB)</th></tr>';
+  THIRD.forEach(f => {
+    h += `<tr><td>${f >= 1000 ? f / 1000 + 'k' : f}</td>
+      <td><input type="number" step="any" class="baLev" data-f="${f}" placeholder="—"></td></tr>`;
+  });
+  h += '</table>';
+  $('ba-table-wrap').innerHTML = h;
+}
+function doBandAnalysis() {
+  const net = $('ba-net').value;
+  const lev = {};
+  document.querySelectorAll('.baLev').forEach(inp => { if (inp.value !== '') lev[Number(inp.dataset.f)] = Number(inp.value); });
+  if (!Object.keys(lev).length) return show('ba-out', 'Enter at least one ⅓-octave band level.', 'err');
+  // Group consecutive ⅓-octave triplets into octave bands (centre = middle third).
+  const octs = [];
+  for (let i = 0; i + 2 < THIRD.length; i += 3) {
+    const trio = [THIRD[i], THIRD[i + 1], THIRD[i + 2]].filter(f => f in lev);
+    if (!trio.length) continue;
+    octs.push({ oc: THIRD[i + 1], spl: dBsum(trio.map(f => lev[f])), thirds: trio.map(f => ({ f, L: lev[f] })) });
+  }
+  const overall = dBsum(octs.map(o => o.spl));
+  const wtd = dBsum(octs.map(o => o.spl + weightOffset(o.oc, net)));
+  const tag = net === 'Z' ? 'dB' : `dB(${net})`;
+  let t = `<table class="bands"><tr><th>Octave (Hz)</th><th>⅓-octaves</th><th>Octave SPL</th>`;
+  if (net !== 'Z') t += `<th>+W</th><th>Weighted</th>`;
+  t += `</tr>`;
+  octs.forEach(o => {
+    const w = weightOffset(o.oc, net);
+    t += `<tr><td>${o.oc >= 1000 ? o.oc / 1000 + 'k' : o.oc}</td>
+      <td>${o.thirds.map(x => fmt(x.L)).join(' + ')}</td>
+      <td><b>${fmt(o.spl, 2)}</b></td>`;
+    if (net !== 'Z') t += `<td>${w >= 0 ? '+' : ''}${fmt(w, 1)}</td><td>${fmt(o.spl + w, 2)}</td>`;
+    t += `</tr>`;
+  });
+  t += `</table>`;
+  show('ba-out',
+    `<b>(a) Octave band SPLs</b>${t}
+     <div class="big">(b) Overall SPL = <b>${fmt(overall, 2)} dB</b></div>
+     <div class="big">(b) Overall ${net === 'Z' ? 'level' : net + '-weighted'} = <b>${fmt(wtd, 2)} ${tag}</b></div>` +
+    work([
+      `Each octave SPL = 10·log₁₀( Σ 10^(L_⅓/10) )  over its three ⅓-octaves`,
+      `Overall SPL = 10·log₁₀( Σ 10^(L_oct/10) ) = <b>${fmt(overall, 2)} dB</b>`,
+      `Overall ${tag} = 10·log₁₀( Σ 10^((L_oct + W_oct)/10) ) = <b>${fmt(wtd, 2)} ${tag}</b>`,
     ]));
 }
 
@@ -1067,6 +1116,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initSearch();
   buildWeightTable();
+  buildBandTable();
   buildRefTable();
   initGrids();
 });

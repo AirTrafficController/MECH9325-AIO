@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=23">
+<link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
 <header>
@@ -477,6 +477,33 @@
   <div id="w-out" class="result"></div>
 </section>
 
+<!-- ============================ BAND WORKBENCH ============================ -->
+<section class="tab" data-tab="bands">
+  <h2>Band Workbench — ⅓-octave → octave → overall (one tab)</h2>
+  <p class="desc">Enter the measured <strong>⅓-octave</strong> band levels once. This combines each triplet of
+     ⅓-octaves into its octave band <em>(part a)</em>, then gives the overall SPL and the overall weighted
+     level <em>(part b)</em> — the whole "9 ⅓-octave bands" question without switching tabs. Leave a band blank
+     to ignore it. The weighted total is computed from the <strong>octave-band</strong> results (the method these
+     questions ask for).</p>
+
+  <div class="row">
+    <label>Weighting for the overall weighted level
+      <select id="ba-net">
+        <option value="A" selected>A-weighting → dB(A)</option>
+        <option value="B">B-weighting → dB(B)</option>
+        <option value="C">C-weighting → dB(C)</option>
+        <option value="Z">None (linear) → dB</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="ba-table-wrap"></div>
+  <button onclick="doBandAnalysis()">Analyse</button>
+  <div id="ba-out" class="result"></div>
+  <p class="note">Octave SPL = combine its three ⅓-octaves · Overall = combine octaves ·
+     Weighted = Σ over octaves of (octave SPL + W at octave centre)</p>
+</section>
+
 <!-- ============================ LEQ ============================ -->
 <section class="tab" data-tab="leq">
   <h2>Equivalent Continuous Level L<sub>eq</sub></h2>
@@ -801,7 +828,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=23"></script>
-<script src="app.js?v=23"></script>
+<script src="data.js?v=24"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>
