@@ -414,9 +414,12 @@
     <h3>L<sub>w</sub> from free-field band SPLs (un-weight + surface area)</h3>
     <p class="hint">For a source measured in a <strong>free field</strong> (e.g. sitting on the ground) with no
        background/room corrections needed. Enter the octave (or ⅓-octave) band SPLs; if they are
-       A/B/C-weighted they are first <strong>un-weighted</strong> to linear, energy-summed to the overall SPL,
-       then the surface-area term is added:
-       <span class="f">L<sub>w</sub> = L̄<sub>p</sub> + 10·log<sub>10</sub>(S/S₀)</span>. Leave a band blank to ignore it.</p>
+       A/B/C-weighted they are first <strong>un-weighted</strong> to linear and energy-summed to the overall SPL
+       L̄<sub>p</sub>. The power then follows via intensity:
+       <span class="f">p²<sub>rms</sub> = p²<sub>ref</sub>·10<sup>L̄<sub>p</sub>/10</sup></span> →
+       <span class="f">I = p²<sub>rms</sub>/ρc</span> →
+       <span class="f">W = I·S</span> →
+       <span class="f">L<sub>w</sub> = 10·log<sub>10</sub>(W/W<sub>ref</sub>)</span>. Leave a band blank to ignore it.</p>
     <div class="row">
       <label>Band levels are
         <select id="p-net">
@@ -445,10 +448,14 @@
       <label>…or diameter (m) <input id="p-d" type="number" step="any" placeholder="0.86"></label>
       <label>Custom area S (m²) <input id="p-S" type="number" step="any" placeholder="—"></label>
     </div>
+    <div class="row">
+      <label>Air density ρ (kg/m³) <input id="p-rho" type="number" value="1.21" step="any"></label>
+      <label>Sound speed c (m/s) <input id="p-c" type="number" value="343" step="any"></label>
+    </div>
     <button onclick="doPowerFromBands()">Compute L<sub>w</sub></button>
     <div id="p-out" class="result"></div>
     <p class="note">Un-weight: L<sub>lin</sub> = L<sub>weighted</sub> − W<sub>i</sub> &nbsp;·&nbsp;
-       hemisphere S = 2πr², sphere S = 4πr².</p>
+       I = p²<sub>rms</sub>/ρc &nbsp;·&nbsp; W = I·S &nbsp;·&nbsp; hemisphere S = 2πr², sphere S = 4πr².</p>
   </div>
 </section>
 
@@ -869,7 +876,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="data.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

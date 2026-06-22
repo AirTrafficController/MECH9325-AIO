@@ -913,9 +913,13 @@ function doPowerFromBands() {
     S = (surf === 'sphere' ? 4 : 2) * Math.PI * r * r;
   }
 
-  const Lp = dBsum(rows.map(r => r.lin));   // overall (un-weighted) surface-average SPL
-  const areaTerm = 10 * lg(S);
-  const Lw = Lp + areaTerm;
+  const Lp = dBsum(rows.map(r => r.lin));        // overall (un-weighted) surface-average SPL
+  const rho = Number($('p-rho').value), c = Number($('p-c').value);
+  if (!(rho > 0 && c > 0)) return show('p-out', 'Air density ρ and sound speed c must be > 0.', 'err');
+  const p2 = P_REF * P_REF * 10 ** (Lp / 10);    // mean-square pressure, Pa²
+  const I  = p2 / (rho * c);                     // intensity (free field), W/m²
+  const W  = I * S;                              // radiated power, W
+  const Lw = 10 * lg(W / W_REF);                 // sound power level, dB re 1e-12 W
   const tag = net === 'Z' ? 'dB' : `dB(${net})`;
 
   let t = `<table class="bands"><tr><th>Freq</th><th>${net === 'Z' ? 'Level' : 'Given ' + tag}</th>`;
@@ -937,9 +941,12 @@ function doPowerFromBands() {
     work([
       net === 'Z' ? 'Bands already linear — no un-weighting.'
                   : `Un-weight each band: L_lin = L_${net} − W_i`,
-      `Overall SPL  L̄_p = 10·log₁₀( Σ 10^(L_lin/10) ) = <b>${fmt(Lp, 1)} dB</b>`,
-      `${surfName}: S = ${sci(S)} m² ⇒ 10·log₁₀(S) = ${fmt(areaTerm, 2)} dB`,
-      `L_w = L̄_p + 10·log₁₀(S) = ${fmt(Lp, 1)} + ${fmt(areaTerm, 2)} = <b>${fmt(Lw, 1)} dB re 10⁻¹² W</b>`,
+      `Overall SPL  L̄_p = 10·log₁₀( Σ 10^(L_lin/10) ) = <b>${fmt(Lp, 2)} dB</b>`,
+      `p²_rms = p²_ref·10^(L̄_p/10) = (2×10⁻⁵)²·10^(${fmt(Lp, 2)}/10) = ${sci(p2)} Pa²`,
+      `I = p²_rms/(ρc) = ${sci(p2)}/(${fmt(rho)}·${fmt(c)}) = ${sci(I)} W/m²`,
+      `${surfName}: S = ${sci(S)} m²`,
+      `W = I·S = ${sci(I)}·${sci(S)} = ${sci(W)} W`,
+      `L_w = 10·log₁₀(W/W_ref) = 10·log₁₀(${sci(W)}/10⁻¹²) = <b>${fmt(Lw, 1)} dB re 10⁻¹² W</b>`,
     ]));
 }
 
