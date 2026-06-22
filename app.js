@@ -95,7 +95,7 @@ const TAB_TAGS = {
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure',
-  power: 'sound power measurement lw k1 k2 background correction environmental hemisphere surface area reference source mean spl',
+  power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
   bands: 'band workbench third octave to octave combine spls overall spl a-weighted dba one third 1/3 octave consecutive bands triplet convert all in one part a b spectrum analysis nine bands',
@@ -863,6 +863,86 @@ function doLwMeas() {
   show('lwm-out', `L<sub>w</sub> = <b>${fmt(Lw, 2)} dB</b> &nbsp;<span class="small">= (${lp}−${k1}−${k2}) + 10·log₁₀(${S})</span>`);
 }
 
+/* ---- L_w from free-field band SPLs: un-weight A/B/C bands, sum, add surface area ---- */
+function powerBandSet() {
+  const m = $('p-band').value;
+  return m === 'oct' ? OCT_MAIN : m === 'octfull' ? OCT_FULL : THIRD;
+}
+function buildPowerBandTable() {
+  const bands = powerBandSet();
+  let h = '<table class="bands"><tr><th>Freq (Hz)</th><th>Band level (dB)</th></tr>';
+  bands.forEach(f => {
+    h += `<tr><td>${f >= 1000 ? f / 1000 + 'k' : f}</td>
+      <td><input type="number" step="any" class="plev" data-f="${f}" placeholder="—"></td></tr>`;
+  });
+  h += '</table>';
+  $('p-table-wrap').innerHTML = h;
+}
+function prefillDrill() {
+  $('p-net').value = 'A';
+  $('p-band').value = 'octfull';
+  buildPowerBandTable();
+  document.querySelectorAll('.plev').forEach(inp => {
+    const v = DRILL_EXAMPLE[Number(inp.dataset.f)];
+    if (v !== undefined) inp.value = v;
+  });
+  $('p-surf').value = 'hemi';
+  $('p-d').value = 0.86; $('p-r').value = ''; $('p-S').value = '';
+}
+function doPowerFromBands() {
+  const net = $('p-net').value;
+  const rows = [];
+  document.querySelectorAll('.plev').forEach(inp => {
+    if (inp.value === '') return;
+    const f = Number(inp.dataset.f), given = Number(inp.value), w = weightOffset(f, net);
+    rows.push({ f, given, lin: given - w });   // un-weight: linear = weighted − W
+  });
+  if (!rows.length) return show('p-out', 'Enter at least one band level.', 'err');
+
+  // Measurement-surface area S (m²).
+  const surf = $('p-surf').value;
+  let S;
+  if (surf === 'custom') {
+    S = Number($('p-S').value);
+    if (!(S > 0)) return show('p-out', 'Enter a custom area S > 0 m².', 'err');
+  } else {
+    let r = Number($('p-r').value);
+    const d = Number($('p-d').value);
+    if (!(r > 0) && d > 0) r = d / 2;                 // diameter fallback
+    if (!(r > 0)) return show('p-out', 'Enter a radius or diameter > 0 (or a custom area).', 'err');
+    S = (surf === 'sphere' ? 4 : 2) * Math.PI * r * r;
+  }
+
+  const Lp = dBsum(rows.map(r => r.lin));   // overall (un-weighted) surface-average SPL
+  const areaTerm = 10 * lg(S);
+  const Lw = Lp + areaTerm;
+  const tag = net === 'Z' ? 'dB' : `dB(${net})`;
+
+  let t = `<table class="bands"><tr><th>Freq</th><th>${net === 'Z' ? 'Level' : 'Given ' + tag}</th>`;
+  if (net !== 'Z') t += `<th>−W</th><th>Linear</th>`;
+  t += `</tr>`;
+  rows.forEach(r => {
+    const unW = -weightOffset(r.f, net);
+    t += `<tr><td>${r.f >= 1000 ? r.f / 1000 + 'k' : r.f}</td><td>${fmt(r.given)}</td>`;
+    if (net !== 'Z') t += `<td>${unW >= 0 ? '+' : ''}${fmt(unW, 1)}</td><td>${fmt(r.lin, 1)}</td>`;
+    t += `</tr>`;
+  });
+  t += `</table>`;
+
+  const surfName = surf === 'custom' ? 'custom surface'
+    : surf === 'sphere' ? 'sphere (S = 4πr²)' : 'hemisphere (S = 2πr²)';
+  show('p-out',
+    `${t}
+     <div class="big">L<sub>w</sub> = <b>${fmt(Lw, 1)} dB re 10⁻¹² W</b></div>` +
+    work([
+      net === 'Z' ? 'Bands already linear — no un-weighting.'
+                  : `Un-weight each band: L_lin = L_${net} − W_i`,
+      `Overall SPL  L̄_p = 10·log₁₀( Σ 10^(L_lin/10) ) = <b>${fmt(Lp, 1)} dB</b>`,
+      `${surfName}: S = ${sci(S)} m² ⇒ 10·log₁₀(S) = ${fmt(areaTerm, 2)} dB`,
+      `L_w = L̄_p + 10·log₁₀(S) = ${fmt(Lp, 1)} + ${fmt(areaTerm, 2)} = <b>${fmt(Lw, 1)} dB re 10⁻¹² W</b>`,
+    ]));
+}
+
 /* ---------------- Duct: sound power → microphone voltage ---------------- */
 function doDuct() {
   const Lw   = Number($('duct-Lw').value);          // sound power level, dB re 1e-12 W
@@ -1117,6 +1197,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initSearch();
   buildWeightTable();
   buildBandTable();
+  buildPowerBandTable();
   buildRefTable();
   initGrids();
 });

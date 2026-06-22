@@ -409,6 +409,47 @@
       <p class="note">L<sub>w</sub> = (L̄<sub>p(ST)</sub> − K₁ − K₂) + 10·log<sub>10</sub>(S/S₀), S₀=1 m²</p>
     </div>
   </div>
+
+  <div class="card">
+    <h3>L<sub>w</sub> from free-field band SPLs (un-weight + surface area)</h3>
+    <p class="hint">For a source measured in a <strong>free field</strong> (e.g. sitting on the ground) with no
+       background/room corrections needed. Enter the octave (or ⅓-octave) band SPLs; if they are
+       A/B/C-weighted they are first <strong>un-weighted</strong> to linear, energy-summed to the overall SPL,
+       then the surface-area term is added:
+       <span class="f">L<sub>w</sub> = L̄<sub>p</sub> + 10·log<sub>10</sub>(S/S₀)</span>. Leave a band blank to ignore it.</p>
+    <div class="row">
+      <label>Band levels are
+        <select id="p-net">
+          <option value="A" selected>A-weighted dB(A) → un-weight</option>
+          <option value="B">B-weighted dB(B) → un-weight</option>
+          <option value="C">C-weighted dB(C) → un-weight</option>
+          <option value="Z">Linear dB (no change)</option>
+        </select></label>
+      <label>Band spacing
+        <select id="p-band" onchange="buildPowerBandTable()">
+          <option value="oct">Octave (63 Hz – 8 kHz)</option>
+          <option value="octfull" selected>Octave (31.5 Hz – 16 kHz)</option>
+          <option value="third">⅓ Octave (25 Hz – 20 kHz)</option>
+        </select></label>
+      <button onclick="prefillDrill()">Load drill example</button>
+    </div>
+    <div id="p-table-wrap"></div>
+    <div class="row">
+      <label>Measurement surface
+        <select id="p-surf">
+          <option value="hemi" selected>Hemisphere (S = 2πr²)</option>
+          <option value="sphere">Sphere (S = 4πr²)</option>
+          <option value="custom">Custom area S (m²)</option>
+        </select></label>
+      <label>Radius r (m) <input id="p-r" type="number" step="any" placeholder="0.43"></label>
+      <label>…or diameter (m) <input id="p-d" type="number" step="any" placeholder="0.86"></label>
+      <label>Custom area S (m²) <input id="p-S" type="number" step="any" placeholder="—"></label>
+    </div>
+    <button onclick="doPowerFromBands()">Compute L<sub>w</sub></button>
+    <div id="p-out" class="result"></div>
+    <p class="note">Un-weight: L<sub>lin</sub> = L<sub>weighted</sub> − W<sub>i</sub> &nbsp;·&nbsp;
+       hemisphere S = 2πr², sphere S = 4πr².</p>
+  </div>
 </section>
 
 <!-- ============================ DUCT ============================ -->
@@ -828,7 +869,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=24"></script>
-<script src="app.js?v=24"></script>
+<script src="data.js?v=25"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>

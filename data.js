@@ -50,6 +50,10 @@ const THIRD = WEIGHTING.map(r => r[0]);
 // Quiz-1 vehicle example: octave band levels 63 Hz .. 8 kHz.
 const VEHICLE_EXAMPLE = { 63:93, 125:89, 250:80, 500:54, 1000:71, 2000:64, 4000:58, 8000:61 };
 
+// Electric-drill example (Quiz 3): A-weighted octave band SPLs, 125 Hz .. 16 kHz,
+// measured on a 0.86 m diameter hemisphere (radius 0.43 m), free field on the ground.
+const DRILL_EXAMPLE = { 125:43, 250:51, 500:61, 1000:71, 2000:76, 4000:78, 8000:72, 16000:63 };
+
 // PSIL → max distance (m) for "just-reliable" communication at each voice effort.
 // Approximate Webster speech-communication data used in the course.
 const VOICE_TABLE = [
