@@ -30,7 +30,7 @@ selector on that card. The reference period T also accepts a unit (e.g. `8 h`, `
 | **Subtract** | Remove a source / background · level of one of N identical sources | Quiz 1 |
 | **Waves** | c=f·λ, T, ω, k · speed of sound from temperature · particle velocity/displacement · octave band edges · pipe natural frequencies | Unit 1, 6 |
 | **Distance** | Point (−6 dB/doubling) vs line (−3 dB/doubling) spreading · L<sub>p</sub> from L<sub>w</sub> (free-field/ground) | Quiz 5, Unit 3 |
-| **Room Acoustics** | Sabine T₆₀ (solve any term) · average absorption ᾱ · room constant R · room equation L<sub>p</sub>=L<sub>w</sub>+10log(Q/4πr²+4/R) | Unit 3–4 |
+| **Room Acoustics** | Sabine T₆₀ (solve any term) · average absorption ᾱ · room constant R · room equation L<sub>p</sub>=L<sub>w</sub>+10log(Q/4πr²+4/R) · reverberant level change from adding/removing absorber panels (ΔL<sub>p</sub>=10log(A₁/A₂)) → overall dB(A) | Unit 3–4, Quiz 4 |
 | **Sound Power** | Background correction K₁ · environmental K₂ · L<sub>w</sub> from surface SPL · free-field L<sub>w</sub> from band SPLs (un-weight dB(A)/dB(B)/dB(C) → linear, hemisphere/sphere/custom surface) | Unit 4, Quiz 3 |
 | **Duct → Voltage** | Radiated power in a pipe → intensity (W/A) → plane-wave pressure → microphone voltage (with higher-order-mode cut-on check) | Unit 1–2, 4 |
 | **Weighting** | A/B/C weighting of octave or ⅓-octave bands → dB(A)/dB(B)/dB(C) and linear total | Quiz 1 |

@@ -54,6 +54,18 @@ const VEHICLE_EXAMPLE = { 63:93, 125:89, 250:80, 500:54, 1000:71, 2000:64, 4000:
 // measured on a 0.86 m diameter hemisphere (radius 0.43 m), free field on the ground.
 const DRILL_EXAMPLE = { 125:43, 250:51, 500:61, 1000:71, 2000:76, 4000:78, 8000:72, 16000:63 };
 
+// Office-panel example (Quiz 4): remove six suspended absorber panels.
+// Room 12 x 10 x 3.4 m → V = 408 m³; six panels of 5 x 0.8 m exposed both sides → S_abs = 48 m².
+// Per octave band: measured L_p (dB), reverberation time T₆₀ (s), panel absorption coefficient α.
+const PANEL_EXAMPLE = {
+  V: 408, Sabs: 48, mode: 'remove', net: 'A',
+  bands: {
+    250:  { Lp: 81, T: 2.1, al: 0.30 },
+    500:  { Lp: 84, T: 1.9, al: 0.35 },
+    1000: { Lp: 83, T: 1.8, al: 0.37 },
+  },
+};
+
 // PSIL → max distance (m) for "just-reliable" communication at each voice effort.
 // Approximate Webster speech-communication data used in the course.
 const VOICE_TABLE = [

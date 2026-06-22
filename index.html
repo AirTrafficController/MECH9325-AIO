@@ -369,6 +369,39 @@
       <p class="note">L<sub>p</sub> = L<sub>w</sub> + 10·log<sub>10</sub>( Q/(4πr²) + 4/R )</p>
     </div>
   </div>
+
+  <div class="card">
+    <h3>Reverberant level change — add / remove absorption (panels)</h3>
+    <p class="hint">Predict how the space-averaged octave-band SPLs change when absorbing material is added or
+       removed. From the measured reverberation time the current room absorption is
+       <span class="f">A₁ = 0.161·V/T₆₀</span>; the absorber contributes
+       <span class="f">A<sub>abs</sub> = S<sub>abs</sub>·α</span> (use the <em>total exposed</em> area — both
+       sides of a suspended panel). The reverberant field then shifts by
+       <span class="f">ΔL<sub>p</sub> = 10·log<sub>10</sub>(A₁/A₂)</span>, with A₂ = A₁ ∓ A<sub>abs</sub>.
+       Fill L<sub>p</sub>, T₆₀ and α per band; leave a band blank to ignore it.</p>
+    <div class="row">
+      <label>Change
+        <select id="rv-mode">
+          <option value="remove" selected>Remove absorber (level rises)</option>
+          <option value="add">Add absorber (level falls)</option>
+        </select></label>
+      <label>Overall weighting
+        <select id="rv-net">
+          <option value="A" selected>A → dB(A)</option>
+          <option value="B">B → dB(B)</option>
+          <option value="C">C → dB(C)</option>
+          <option value="Z">None → dB</option>
+        </select></label>
+      <label>Room volume V (m³) <input id="rv-V" type="number" step="any" placeholder="408"></label>
+      <label>Absorber area S<sub>abs</sub> (m²) <input id="rv-Sabs" type="number" step="any" placeholder="48"></label>
+      <button onclick="prefillPanels()">Load Q4 example</button>
+    </div>
+    <div id="rv-table-wrap"></div>
+    <button onclick="doReverbChange()">Compute</button>
+    <div id="rv-out" class="result"></div>
+    <p class="note">A₁ = 0.161·V/T₆₀ · A<sub>abs</sub> = S<sub>abs</sub>·α · A₂ = A₁ ∓ A<sub>abs</sub> ·
+       ΔL<sub>p</sub> = 10·log<sub>10</sub>(A₁/A₂) · overall = Σ<sub>bands</sub> of (L<sub>p</sub> + W).</p>
+  </div>
 </section>
 
 <!-- ============================ SOUND POWER ============================ -->
@@ -876,7 +909,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=26"></script>
-<script src="app.js?v=26"></script>
+<script src="data.js?v=27"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>

@@ -94,7 +94,7 @@ const TAB_TAGS = {
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate',
-  room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure',
+  room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
@@ -841,6 +841,84 @@ function doRoomEq() {
     ]));
 }
 
+/* ---- Reverberant level change when absorption is added / removed (panels) ---- */
+function buildReverbTable() {
+  let h = '<table class="bands"><tr><th>Freq (Hz)</th><th>L<sub>p</sub> (dB)</th><th>T₆₀ (s)</th><th>α</th></tr>';
+  OCT_FULL.forEach(f => {
+    const fl = f >= 1000 ? f / 1000 + 'k' : f;
+    h += `<tr><td>${fl}</td>
+      <td><input type="number" step="any" class="rvLp" data-f="${f}" placeholder="—"></td>
+      <td><input type="number" step="any" class="rvT"  data-f="${f}" placeholder="—"></td>
+      <td><input type="number" step="any" class="rvAl" data-f="${f}" placeholder="—"></td></tr>`;
+  });
+  h += '</table>';
+  $('rv-table-wrap').innerHTML = h;
+}
+function prefillPanels() {
+  buildReverbTable();
+  $('rv-mode').value = PANEL_EXAMPLE.mode;
+  $('rv-net').value = PANEL_EXAMPLE.net;
+  $('rv-V').value = PANEL_EXAMPLE.V;
+  $('rv-Sabs').value = PANEL_EXAMPLE.Sabs;
+  const ex = PANEL_EXAMPLE.bands;
+  document.querySelectorAll('.rvLp').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.Lp; });
+  document.querySelectorAll('.rvT').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.T; });
+  document.querySelectorAll('.rvAl').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.al; });
+}
+function doReverbChange() {
+  const net = $('rv-net').value, mode = $('rv-mode').value;
+  const V = Number($('rv-V').value), Sabs = Number($('rv-Sabs').value);
+  if (!(V > 0)) return show('rv-out', 'Room volume V must be > 0.', 'err');
+  if (!(Sabs > 0)) return show('rv-out', 'Absorber area S_abs must be > 0.', 'err');
+
+  const grab = cls => { const o = {}; document.querySelectorAll('.' + cls).forEach(i => { if (i.value !== '') o[+i.dataset.f] = Number(i.value); }); return o; };
+  const Lpv = grab('rvLp'), Tv = grab('rvT'), Alv = grab('rvAl');
+  const freqs = Object.keys(Lpv).map(Number).sort((a, b) => a - b);
+  if (!freqs.length) return show('rv-out', 'Enter at least one band L_p.', 'err');
+
+  const rows = [];
+  for (const f of freqs) {
+    if (Tv[f] === undefined || Alv[f] === undefined)
+      return show('rv-out', `Band ${f >= 1000 ? f / 1000 + 'k' : f} Hz needs T₆₀ and α as well as L_p.`, 'err');
+    if (!(Tv[f] > 0)) return show('rv-out', `T₆₀ at ${f} Hz must be > 0.`, 'err');
+    const A1 = 0.161 * V / Tv[f];
+    const Aabs = Sabs * Alv[f];
+    const A2 = mode === 'remove' ? A1 - Aabs : A1 + Aabs;
+    if (!(A2 > 0)) return show('rv-out',
+      `Band ${f} Hz: the absorber accounts for more absorption than the room has (A₂ ≤ 0) — check S_abs / α.`, 'err');
+    const dL = 10 * lg(A1 / A2);
+    rows.push({ f, Lp: Lpv[f], T: Tv[f], al: Alv[f], A1, Aabs, A2, dL, newLp: Lpv[f] + dL });
+  }
+
+  const tag = net === 'Z' ? 'dB' : `dB(${net})`;
+  const before = dBsum(rows.map(r => r.Lp + weightOffset(r.f, net)));
+  const after  = dBsum(rows.map(r => r.newLp + weightOffset(r.f, net)));
+  const change = after - before;
+
+  let t = `<table class="bands"><tr><th>Freq</th><th>L<sub>p</sub></th><th>T₆₀</th>` +
+    `<th>A₁</th><th>A<sub>abs</sub></th><th>A₂</th><th>ΔL<sub>p</sub></th><th>new L<sub>p</sub></th></tr>`;
+  rows.forEach(r => {
+    t += `<tr><td>${r.f >= 1000 ? r.f / 1000 + 'k' : r.f}</td><td>${fmt(r.Lp)}</td><td>${fmt(r.T)}</td>
+      <td>${fmt(r.A1, 2)}</td><td>${fmt(r.Aabs, 2)}</td><td>${fmt(r.A2, 2)}</td>
+      <td>${r.dL >= 0 ? '+' : ''}${fmt(r.dL, 2)}</td><td><b>${fmt(r.newLp, 2)}</b></td></tr>`;
+  });
+  t += `</table>`;
+
+  const verb = mode === 'remove' ? 'removal' : 'addition';
+  show('rv-out',
+    `${t}
+     <div class="big">(a) Current = <b>${fmt(before, 1)} ${tag}</b></div>
+     <div class="big">(b) After ${verb} = <b>${fmt(after, 1)} ${tag}</b></div>
+     <div class="big">(c) Change = <b>${change >= 0 ? '+' : ''}${fmt(change, 1)} ${tag}</b></div>` +
+    work([
+      `Per band: A₁ = 0.161·V/T₆₀ · A_abs = S_abs·α · A₂ = A₁ ${mode === 'remove' ? '−' : '+'} A_abs`,
+      `ΔL_p = 10·log₁₀(A₁/A₂) · new L_p = L_p + ΔL_p`,
+      `(a) 10·log₁₀( Σ 10^((L_p + W)/10) ) = <b>${fmt(before, 1)} ${tag}</b>`,
+      `(b) 10·log₁₀( Σ 10^((new L_p + W)/10) ) = <b>${fmt(after, 1)} ${tag}</b>`,
+      `(c) change = (b) − (a) = <b>${change >= 0 ? '+' : ''}${fmt(change, 1)} ${tag}</b>`,
+    ]));
+}
+
 /* ---------------- Sound power measurement ---------------- */
 function doK1() {
   const st = Number($('k1-st').value), b = Number($('k1-b').value), dL = st - b;
@@ -1205,6 +1283,7 @@ window.addEventListener('DOMContentLoaded', () => {
   buildWeightTable();
   buildBandTable();
   buildPowerBandTable();
+  buildReverbTable();
   buildRefTable();
   initGrids();
 });
