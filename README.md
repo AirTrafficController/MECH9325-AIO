@@ -46,6 +46,20 @@ SEL:         SEL   = Leq + 10·log10(T / 1s)
 Duct→V:      W = Wref·10^(Lw/10) · I = W/A (A=πd²/4) · p = √(I·ρc) · V = p·10^(S/20)
 ```
 
+## Recent updates
+
+- **Sound Power tab** — un-weights dB(A)/dB(B)/dB(C) octave or ⅓-octave bands back to linear,
+  energy-sums them into the overall surface-average SPL, and computes L<sub>W</sub> from a
+  hemisphere (2πr²), full sphere (4πr²) or custom measurement surface. Covers the Quiz 3
+  drill-on-a-hemisphere question (validated L<sub>W</sub> = 81.7 dB re 10⁻¹² W); includes a
+  one-click "Load drill example".
+- **Combine → larger-signal error** — finds the error from estimating the total RMS using only
+  the larger of two incoherent signals (`Error = 1/√(1 + r²) − 1`), entered as two pressures or a ratio.
+- **Combine → RMS pressure** — every combined level now also reports the RMS pressure
+  `p = 2×10⁻⁵·10^(L/20) Pa`.
+- **Duct → Voltage tab** — sound power in a pipe → intensity → plane-wave pressure → microphone
+  voltage, with a higher-order-mode cut-on check.
+
 ## Files
 
 - `index.html` — UI / structure
