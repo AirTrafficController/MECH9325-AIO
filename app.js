@@ -25,6 +25,7 @@ function show(id, html, cls = 'ok') {
 /* ---------------- Tabs ---------------- */
 const TABS = [
   ['combine', 'Combine'], ['subtract', 'Subtract'], ['weight', 'Weighting'],
+  ['power', 'Sound Power'],
   ['leq', 'Leq'], ['dose', 'Noise Dose'], ['loud', 'Loudness'],
   ['speech', 'Speech (PSIL)'], ['stats', 'Stats / SEL'],
   ['duct', 'Duct → Voltage'], ['table', 'Tables'],
@@ -167,6 +168,86 @@ function doWeight() {
     `${t}
      <div class="big">Overall: <b>${fmt(wtd, 1)} ${tag}</b></div>
      <span class="small">Linear (unweighted) total = ${fmt(lin, 1)} dB</span>`);
+}
+
+/* ---------------- Sound Power (SPL on a measurement surface → Lw) ---------------- */
+function powerBands() {
+  const m = $('p-band').value;
+  return m === 'oct' ? OCT_MAIN : m === 'octfull' ? OCT_FULL : THIRD;
+}
+function buildPowerTable() {
+  const bands = powerBands();
+  let h = '<table class="bands"><tr><th>Freq (Hz)</th><th>Band level (dB)</th></tr>';
+  bands.forEach(f => {
+    h += `<tr><td>${f >= 1000 ? f / 1000 + 'k' : f}</td>
+      <td><input type="number" step="any" class="plev" data-f="${f}" placeholder="—"></td></tr>`;
+  });
+  h += '</table>';
+  $('p-table-wrap').innerHTML = h;
+}
+function prefillDrill() {
+  $('p-net').value = 'A';
+  $('p-band').value = 'octfull';
+  buildPowerTable();
+  document.querySelectorAll('.plev').forEach(inp => {
+    const v = DRILL_EXAMPLE[Number(inp.dataset.f)];
+    if (v !== undefined) inp.value = v;
+  });
+  $('p-surf').value = 'hemi';
+  $('p-d').value = 0.86;
+  $('p-r').value = '';
+  $('p-S').value = '';
+}
+function doPower() {
+  const net = $('p-net').value;        // network the GIVEN levels carry; un-weighted back to linear
+  const rows = [];
+  document.querySelectorAll('.plev').forEach(inp => {
+    if (inp.value === '') return;
+    const f = Number(inp.dataset.f), given = Number(inp.value);
+    const w = weightOffset(f, net);    // offset that was ADDED to form the weighted level
+    rows.push({ f, given, lin: given - w });   // un-weight: linear = weighted − W
+  });
+  if (!rows.length) return show('p-out', 'Enter at least one band level.', 'err');
+
+  // Measurement-surface area S (m²).
+  const surf = $('p-surf').value;
+  let S;
+  if (surf === 'custom') {
+    S = Number($('p-S').value);
+    if (!(S > 0)) return show('p-out', 'Enter a custom area S > 0 m².', 'err');
+  } else {
+    let r = Number($('p-r').value);
+    const d = Number($('p-d').value);
+    if (!(r > 0) && d > 0) r = d / 2;                 // diameter fallback
+    if (!(r > 0)) return show('p-out', 'Enter a radius or diameter > 0 (or pick a custom area).', 'err');
+    S = (surf === 'sphere' ? 4 : 2) * Math.PI * r * r;
+  }
+
+  const Lp = dBsum(rows.map(r => r.lin));   // overall (un-weighted) surface-average SPL
+  const areaTerm = 10 * lg(S);
+  const Lw = Lp + areaTerm;
+  const tag = net === 'Z' ? 'dB' : `dB(${net})`;
+
+  let t = `<table class="bands"><tr><th>Freq</th><th>${net === 'Z' ? 'Level' : 'Given ' + tag}</th>`;
+  if (net !== 'Z') t += `<th>−W</th><th>Linear</th>`;
+  t += `</tr>`;
+  rows.forEach(r => {
+    const fl = r.f >= 1000 ? r.f / 1000 + 'k' : r.f;
+    const unW = -weightOffset(r.f, net);
+    t += `<tr><td>${fl}</td><td>${fmt(r.given)}</td>`;
+    if (net !== 'Z') t += `<td>${unW >= 0 ? '+' : ''}${fmt(unW)}</td><td>${fmt(r.lin)}</td>`;
+    t += `</tr>`;
+  });
+  t += '</table>';
+
+  const surfName = surf === 'custom' ? 'custom surface'
+    : surf === 'sphere' ? 'sphere S = 4πr²' : 'hemisphere S = 2πr²';
+  show('p-out',
+    `${t}
+     <div class="big">Sound power level L<sub>W</sub> = <b>${fmt(Lw, 1)} dB re 10⁻¹² W</b></div>
+     <span class="small">Overall ${net === 'Z' ? 'linear' : 'un-weighted linear'} SPL
+       L̄<sub>p</sub> = ${fmt(Lp, 1)} dB · ${surfName} = ${Number(S.toPrecision(4))} m² ·
+       10·log₁₀(S) = ${fmt(areaTerm, 2)} dB</span>`);
 }
 
 /* ---------------- Leq ---------------- */
@@ -340,5 +421,6 @@ function buildRefTable() {
 window.addEventListener('DOMContentLoaded', () => {
   initTabs();
   buildWeightTable();
+  buildPowerTable();
   buildRefTable();
 });

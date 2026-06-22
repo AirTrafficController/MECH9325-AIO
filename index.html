@@ -139,6 +139,56 @@
   <div id="w-out" class="result"></div>
 </section>
 
+<!-- ============================ SOUND POWER ============================ -->
+<section class="tab" data-tab="power">
+  <h2>Sound Power from Measurement-Surface SPL</h2>
+  <p class="desc">Find the radiated <strong>sound power level</strong> from band SPLs measured on a surface that
+     encloses the source. The band levels are (optionally) un-weighted from dB(A)/dB(B)/dB(C) back to linear,
+     energy-summed into the overall SPL, then the measurement-surface area is added:
+     <span class="f">L<sub>W</sub> = L̄<sub>p</sub> + 10·log<sub>10</sub>(S / S<sub>0</sub>)</span>, S<sub>0</sub> = 1 m².
+     A source sitting on a hard floor radiates into a <em>hemisphere</em> (S = 2πr²); a free-field source into a
+     full <em>sphere</em> (S = 4πr²).</p>
+
+  <div class="row">
+    <label>Band levels are
+      <select id="p-net">
+        <option value="A" selected>A-weighted dB(A) → un-weight</option>
+        <option value="B">B-weighted dB(B) → un-weight</option>
+        <option value="C">C-weighted dB(C) → un-weight</option>
+        <option value="Z">Linear dB (no change)</option>
+      </select>
+    </label>
+    <label>Band spacing
+      <select id="p-band" onchange="buildPowerTable()">
+        <option value="oct">Octave (63 Hz – 8 kHz)</option>
+        <option value="octfull" selected>Octave (31.5 Hz – 16 kHz)</option>
+        <option value="third">⅓ Octave (25 Hz – 20 kHz)</option>
+      </select>
+    </label>
+    <button onclick="prefillDrill()">Load drill example</button>
+  </div>
+
+  <div id="p-table-wrap"></div>
+
+  <div class="row">
+    <label>Measurement surface
+      <select id="p-surf">
+        <option value="hemi" selected>Hemisphere (S = 2πr²)</option>
+        <option value="sphere">Sphere (S = 4πr²)</option>
+        <option value="custom">Custom area S (m²)</option>
+      </select>
+    </label>
+    <label>Radius r (m) <input id="p-r" type="number" step="any" placeholder="0.43"></label>
+    <label>…or diameter (m) <input id="p-d" type="number" step="any" placeholder="0.86"></label>
+    <label>Custom area S (m²) <input id="p-S" type="number" step="any" placeholder="—"></label>
+  </div>
+  <button onclick="doPower()">Compute sound power level</button>
+  <div id="p-out" class="result"></div>
+  <p class="note">L<sub>W</sub> = L̄<sub>p</sub> + 10·log<sub>10</sub>(S/S₀) &nbsp;·&nbsp;
+     un-weight: L<sub>lin</sub> = L<sub>weighted</sub> − W<sub>i</sub> &nbsp;·&nbsp;
+     hemisphere S = 2πr², sphere S = 4πr².</p>
+</section>
+
 <!-- ============================ LEQ ============================ -->
 <section class="tab" data-tab="leq">
   <h2>Equivalent Continuous Level L<sub>eq</sub></h2>
