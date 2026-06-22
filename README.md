@@ -16,6 +16,7 @@ course Moodle quizzes. **No build step, no server, no dependencies** — just op
 | **Combine** | Add incoherent levels · N identical sources · increase in level when sources are added · error from using only the larger of two RMS signals | Quiz 1 |
 | **Subtract** | Remove a source / background · level of one of N identical sources | Quiz 1 |
 | **Weighting** | A/B/C weighting of octave or ⅓-octave bands → overall dB(A)/dB(B)/dB(C) and linear total | Quiz 1 |
+| **Sound Power** | Un-weight dB(A)/dB(B)/dB(C) bands → linear · energy-sum to overall SPL · L<sub>W</sub> from a hemisphere/sphere/custom measurement surface | Quiz 3 |
 | **Leq** | L<sub>eq</sub> from levels & durations · L<sub>eq</sub> from discrete events (train/vehicle pass-bys) | Quiz 4, 7 |
 | **Noise Dose** | Worker shift L<sub>Aeq</sub>, dose %, OH&S limit check, max permissible time (3 dB exchange, 85 dB(A)) | Quiz 4 |
 | **Loudness** | Phons ↔ sones, equal-loudness-contour guidance | Quiz 6 |
@@ -25,7 +26,7 @@ course Moodle quizzes. **No build step, no server, no dependencies** — just op
 | **Tables** | Full A/B/C weighting network reference table | — |
 
 Every formula was validated against the worked quiz answers (e.g. dB(A) total = 77.5,
-L<sub>Aeq,12h</sub> = 81.07, L<sub>Aeq,24h</sub> = 70.55, 16 sones).
+L<sub>Aeq,12h</sub> = 81.07, L<sub>Aeq,24h</sub> = 70.55, 16 sones, drill L<sub>W</sub> = 81.7 dB).
 
 ## Key formulas
 
@@ -35,6 +36,7 @@ Larger-only: p_tot = sqrt(p1^2 + p2^2)   ·   Error = 1/sqrt(1 + r^2) − 1,  r 
 N sources:   L_tot = L1 + 10·log10(N)
 Subtract:    L_rem = 10·log10( 10^(Ltot/10) − 10^(Lbg/10) )
 Weighted:    L_W   = 10·log10( Σ 10^((Li+Wi)/10) )
+Un-weight:   L_lin = L_weighted − Wi   ·   L_W = L̄p + 10·log10(S),  hemi S = 2πr², sphere S = 4πr²
 Leq:         L_eq  = 10·log10( (1/T)·Σ ti·10^(Li/10) )
 Events:      L_eq  = 10·log10( (1/T)·Σ Ni·ti·10^(Li/10) )
 Max time:    T     = Tc / 2^((LAeq − Lc)/q)      (Lc=85, q=3, Tc=8)
