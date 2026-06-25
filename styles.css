@@ -12,7 +12,13 @@ header{background:linear-gradient(135deg,#16304a,#0f1720);border-bottom:1px soli
 header h1{margin:0 0 6px;font-size:1.55rem}
 header .sub{margin:0;color:var(--muted);max-width:760px}
 
-nav#tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px auto}
+.searchbar{display:flex;align-items:center;gap:12px;margin:16px auto 0}
+.searchbar input{flex:1;max-width:560px;font-size:.95rem;padding:11px 14px;border-radius:10px}
+#search-info{color:var(--muted);font-size:.85rem;white-space:nowrap}
+#search-info .nomatch{color:var(--warn)}
+
+nav#tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px auto}
+nav#tabs button.match{border-color:var(--accent2);color:var(--ink)}
 nav#tabs button{background:var(--panel);color:var(--muted);border:1px solid var(--line);
   padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.9rem}
 nav#tabs button:hover{color:var(--ink)}
@@ -51,6 +57,11 @@ button:hover{filter:brightness(1.08)}
 .result.err{border-color:var(--bad);color:#ffd1d1}
 .result.warn{border-color:var(--warn)}
 .result b{color:var(--accent2)}
+.work{margin-top:12px;border-top:1px dashed var(--line);padding-top:8px}
+.work-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+.work-l{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86rem;line-height:1.7;
+  color:var(--ink);padding:1px 0;overflow-x:auto;white-space:nowrap}
+.work-l b{color:var(--accent2)}
 .result .big{font-size:1.15rem;margin-top:10px}
 .result .bad{color:var(--bad)} .result .good{color:var(--good)}
 
@@ -66,3 +77,37 @@ code{background:#0c1622;border:1px solid var(--line);border-radius:5px;padding:1
 footer{color:var(--muted);font-size:.82rem;padding:24px 18px;border-top:1px solid var(--line)}
 
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+/* Level / Time row editor (grid input) */
+.lt-grid{margin:6px 0}
+.lt-groups{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.lt-group{border:1px solid var(--line);border-radius:9px;padding:8px 10px 10px;background:#0b1420}
+.lt-group.off{opacity:.45}
+.ghead{display:flex;flex-direction:column;gap:4px;margin:0 0 7px}
+.gactive{flex-direction:row;align-items:center;gap:6px;font-size:.78rem;color:var(--accent2);margin:0;min-width:0}
+.gactive input{width:auto;margin:0;padding:0}
+.lt-group .glabel{width:100%;max-width:11em;margin:0;padding:4px 8px;font-size:.85rem;font-weight:600}
+.lt-group table{border-collapse:collapse;width:auto;margin:0}
+.lt-group th{text-align:left;font-size:.76rem;font-weight:600;color:var(--muted);padding:2px 6px 4px}
+.lt-group td{padding:2px 4px;border:none}
+.lt-group input.cell{padding:6px 9px;font-size:.95rem;width:8.5em}
+.lt-group .rm{background:transparent;color:var(--muted);border:1px solid var(--line);
+  padding:3px 9px;margin:0;font-weight:700;line-height:1;border-radius:6px}
+.lt-group .rm:hover{color:#ff8a8a;border-color:#ff8a8a;filter:none}
+.lt-group .addrow{background:transparent;color:var(--accent2);border:1px dashed var(--line);
+  padding:5px 12px;margin:6px 0 0;font-weight:600;font-size:.85rem;display:block}
+.lt-group .addrow:hover{border-color:var(--accent2);filter:none}
+.lt-group .rmcol{background:transparent;color:var(--muted);border:1px solid var(--line);
+  padding:3px 9px;margin:6px 0 0;font-size:.8rem;font-weight:600;display:block}
+.lt-group .rmcol:hover{color:#ff8a8a;border-color:#ff8a8a;filter:none}
+.lt-group .dupcol{background:transparent;color:var(--accent2);border:1px solid var(--line);
+  padding:3px 9px;margin:6px 0 0;font-size:.8rem;font-weight:600;display:block}
+.lt-group .dupcol:hover{border-color:var(--accent2);filter:none}
+.lt-grid .addcol{background:transparent;color:var(--accent);border:1px dashed var(--accent);
+  padding:7px 14px;margin:10px 0 0;font-weight:600}
+.lt-grid .addcol:hover{filter:brightness(1.15)}
+details.bulk{margin:8px 0 0}
+details.bulk summary{cursor:pointer;color:var(--muted);font-size:.85rem;user-select:none}
+details.bulk summary:hover{color:var(--ink)}
+details.bulk textarea{margin-top:8px}
+details.bulk button{margin-top:8px}

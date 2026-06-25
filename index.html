@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
 <header>
@@ -15,25 +15,100 @@
   </div>
 </header>
 
+<div class="wrap searchbar">
+  <input id="tab-search" type="search" autocomplete="off"
+         placeholder="🔍  Search calculators — e.g. SPL, dB(A), Leq, RT60, sones, mass law, Lw…">
+  <span id="search-info"></span>
+</div>
+
 <nav id="tabs" class="wrap"></nav>
 
 <main class="wrap">
+
+<!-- ============================ LEVELS ============================ -->
+<section class="tab" data-tab="levels">
+  <h2>Levels &amp; Conversions (SPL · Power · Intensity · Pressure)</h2>
+  <p class="desc">The fundamental decibel definitions and pressure/intensity/power conversions (Units 1–2).
+     References: p<sub>ref</sub>=2×10⁻⁵ Pa, W<sub>ref</sub>=10⁻¹² W, I<sub>ref</sub>=10⁻¹² W/m², ρc=415 rayls.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>SPL ↔ pressure</h3>
+      <label>Sound pressure level L<sub>p</sub> (dB) <input id="lp-val" type="number" value="94" step="any"></label>
+      <label>RMS pressure p (Pa) <input id="lp-p" type="number" step="any" placeholder="(or fill above)"></label>
+      <button onclick="doSPL()">Convert</button>
+      <div id="lp-out" class="result"></div>
+      <p class="note">L<sub>p</sub> = 20·log<sub>10</sub>(p / 2×10⁻⁵) &nbsp;·&nbsp; p = 2×10⁻⁵·10<sup>Lp/20</sup></p>
+    </div>
+
+    <div class="card">
+      <h3>Sound Power Level</h3>
+      <label>Sound power W (W) <input id="lw-W" type="number" value="0.5" step="any"></label>
+      <label>or L<sub>w</sub> (dB) <input id="lw-L" type="number" step="any" placeholder="(or fill above)"></label>
+      <button onclick="doLw()">Convert</button>
+      <div id="lw-out" class="result"></div>
+      <p class="note">L<sub>w</sub> = 10·log<sub>10</sub>(W / 10⁻¹²)</p>
+    </div>
+
+    <div class="card">
+      <h3>Sound Intensity Level &amp; intensity from pressure</h3>
+      <label>Intensity I (W/m²) <input id="li-I" type="number" step="any" placeholder="e.g. 1e-6"></label>
+      <label>or RMS pressure p (Pa) — uses I = p²/ρc <input id="li-p" type="number" step="any" placeholder="e.g. 1"></label>
+      <button onclick="doLI()">Compute</button>
+      <div id="li-out" class="result"></div>
+      <p class="note">L<sub>I</sub> = 10·log<sub>10</sub>(I/10⁻¹²) &nbsp;·&nbsp; I = p<sub>rms</sub>²/ρc</p>
+    </div>
+
+    <div class="card">
+      <h3>Peak ↔ RMS &amp; combining tones</h3>
+      <label>Peak pressure amplitude P (Pa) → RMS <input id="rms-P" type="number" value="2" step="any"></label>
+      <button onclick="doRMS()">p_rms = P/√2</button>
+      <div id="rms-out" class="result"></div>
+      <p class="hint" style="margin-top:10px">Combine several component RMS pressures (Pa):</p>
+      <div class="lt-grid" data-target="rms-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one value per line)</summary>
+      <textarea id="rms-list" rows="3" placeholder="1.0&#10;2.0&#10;0.5"></textarea>
+      <button type="button" data-applygrid="rms-list">Apply to grid</button></details>
+      <button onclick="doRMScombine()">Combine → total p &amp; SPL</button>
+      <div id="rmsc-out" class="result"></div>
+      <p class="note">p<sub>tot</sub> = √(Σ p<sub>i</sub>²)</p>
+    </div>
+
+    <div class="card">
+      <h3>PSD → RMS pressure (integrate a band)</h3>
+      <p class="hint">Mean-square pressure = area under the power spectral density S(f) across the band.
+         For a linearly-varying PSD enter both endpoint densities; for a flat band put the same value in both.</p>
+      <div class="row">
+        <label>Lower freq f₁ (Hz) <input id="psd-f1" type="number" value="973" step="any"></label>
+        <label>Upper freq f₂ (Hz) <input id="psd-f2" type="number" value="4584" step="any"></label>
+      </div>
+      <div class="row">
+        <label>PSD at f₁ — S₁ (Pa²/Hz) <input id="psd-s1" type="number" value="0.0015" step="any"></label>
+        <label>PSD at f₂ — S₂ (Pa²/Hz) <input id="psd-s2" type="number" value="1.5e-4" step="any"></label>
+      </div>
+      <button onclick="doPSD()">Compute RMS</button>
+      <div id="psd-out" class="result"></div>
+      <p class="note">p<sub>rms</sub>² = ∫S df = ½(S₁+S₂)(f₂−f₁) &nbsp;·&nbsp; SPL = 20·log<sub>10</sub>(p<sub>rms</sub>/2×10⁻⁵)</p>
+    </div>
+  </div>
+</section>
 
 <!-- ============================ COMBINE ============================ -->
 <section class="tab" data-tab="combine">
   <h2>Combine / Add Sound Levels</h2>
   <p class="desc">Add incoherent sound levels (dB). Levels combine on an energy basis:
      <span class="f">L<sub>tot</sub> = 10·log<sub>10</sub>( Σ 10<sup>L<sub>i</sub>/10</sup> )</span>.
-     Use this to add the noise of several sources, to combine octave-band levels into a total,
-     or to find the level of <em>N</em> identical sources. The combined result is also reported as an
-     RMS sound pressure <span class="f">p = 2×10<sup>−5</sup>·10<sup>L/20</sup> Pa</span>.</p>
+     Use this to add the noise of several sources, or to find the level of <em>N</em> identical sources.</p>
 
   <div class="grid2">
     <div class="card">
       <h3>Add a list of levels</h3>
-      <p class="hint">One level (dB) per line.</p>
+      <p class="hint">One level (dB) per row.</p>
+      <div class="lt-grid" data-target="combine-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one level per line)</summary>
       <textarea id="combine-list" rows="6" placeholder="80&#10;80&#10;74">80
 80</textarea>
+      <button type="button" data-applygrid="combine-list">Apply to grid</button></details>
       <button onclick="doCombine()">Combine</button>
       <div id="combine-out" class="result"></div>
     </div>
@@ -66,10 +141,10 @@
 
   <div class="card">
     <h3>Error from using only the larger signal</h3>
-    <p class="hint">Two incoherent RMS pressures combine in quadrature
-       <span class="f">p<sub>tot</sub> = √(p₁² + p₂²)</span>. This finds the error if the smaller signal
-       is ignored and only the larger one is used to estimate the total RMS. Enter the two RMS values
-       <em>or</em> just the ratio (smaller ÷ larger).</p>
+    <p class="hint">Two incoherent RMS pressures add in quadrature
+       <span class="f">p<sub>tot</sub> = √(p₁² + p₂²)</span>. This finds the % error if the smaller
+       signal is ignored and only the larger one is used to estimate the total RMS. Enter the two RMS
+       values, <em>or</em> just the ratio (smaller ÷ larger).</p>
     <div class="row">
       <label>Larger RMS p₁ (any unit) <input id="err-p1" type="number" value="1" step="any"></label>
       <label>Smaller RMS p₂ (same unit) <input id="err-p2" type="number" value="0.11" step="any"></label>
@@ -78,6 +153,20 @@
     <button onclick="doLargerError()">Compute error</button>
     <div id="err-out" class="result"></div>
     <p class="note">Error = (p₁ − p<sub>tot</sub>) / p<sub>tot</sub> = 1/√(1 + r²) − 1, &nbsp; r = p₂/p₁</p>
+  </div>
+
+  <div class="card">
+    <h3>Max sources under a limit</h3>
+    <p class="hint">N₁ identical sources currently give a measured total L<sub>tot</sub>; find the largest number
+       of those sources whose combined level stays at or below a limit (e.g. how many machines may run at night).</p>
+    <div class="row">
+      <label>Current number N₁ <input id="ms-n1" type="number" value="8" step="1" min="1"></label>
+      <label>Measured total L<sub>tot</sub> (dB) <input id="ms-L1" type="number" value="54" step="any"></label>
+      <label>Limit L<sub>max</sub> (dB) <input id="ms-max" type="number" value="50" step="any"></label>
+    </div>
+    <button onclick="doMaxSources()">Compute max N</button>
+    <div id="ms-out" class="result"></div>
+    <p class="note">N ≤ N₁·10<sup>(L<sub>max</sub> − L<sub>tot</sub>)/10</sup>, rounded down</p>
   </div>
 </section>
 
@@ -105,6 +194,336 @@
       <div id="one-out" class="result"></div>
       <p class="note">L₁ = L<sub>tot</sub> − 10·log<sub>10</sub>(N)</p>
     </div>
+  </div>
+</section>
+
+<!-- ============================ WAVES ============================ -->
+<section class="tab" data-tab="waves">
+  <h2>Plane Waves &amp; Wave Properties</h2>
+  <p class="desc">Frequency, wavelength, speed of sound, impedance and particle motion (Units 1 &amp; 6).</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>c = f·λ</h3>
+      <p class="hint">Enter any two; leave the unknown blank.</p>
+      <label>Speed c (m/s) <input id="wave-c" type="number" value="343" step="any"></label>
+      <label>Frequency f (Hz) <input id="wave-f" type="number" value="1000" step="any"></label>
+      <label>Wavelength λ (m) <input id="wave-lam" type="number" step="any" placeholder="(blank to solve)"></label>
+      <button onclick="doWave()">Solve</button>
+      <div id="wave-out" class="result"></div>
+      <p class="note">Also: period T=1/f · ω=2πf · k=2π/λ=2πf/c</p>
+    </div>
+
+    <div class="card">
+      <h3>Speed of sound from temperature</h3>
+      <label>Temperature (°C) <input id="sos-T" type="number" value="20" step="any"></label>
+      <label>Gas constant R (J·kg⁻¹·K⁻¹, air=287) <input id="sos-R" type="number" value="287" step="any"></label>
+      <label>γ (air=1.4) <input id="sos-g" type="number" value="1.4" step="any"></label>
+      <button onclick="doSOS()">Compute c</button>
+      <div id="sos-out" class="result"></div>
+      <p class="note">c = √(γ·R·T₀), T₀ in K. Air shortcut c≈20.06·√T₀</p>
+    </div>
+
+    <div class="card">
+      <h3>Particle velocity &amp; displacement</h3>
+      <label>Pressure amplitude P (Pa) <input id="pv-P" type="number" value="2" step="any"></label>
+      <label>Frequency f (Hz) <input id="pv-f" type="number" value="1000" step="any"></label>
+      <label>ρc (rayls) <input id="pv-rc" type="number" value="415" step="any"></label>
+      <button onclick="doParticle()">Compute</button>
+      <div id="pv-out" class="result"></div>
+      <p class="note">u = P/ρc · ξ = u/ω · I = P²/(2ρc)</p>
+    </div>
+
+    <div class="card">
+      <h3>Octave band edges &amp; pipe modes</h3>
+      <label>Octave band centre f<sub>c</sub> (Hz) <input id="be-fc" type="number" value="1000" step="any"></label>
+      <label>Band type
+        <select id="be-type"><option value="oct">Octave</option><option value="third">⅓ Octave</option></select></label>
+      <button onclick="doBandEdges()">Band edges</button>
+      <div id="be-out" class="result"></div>
+      <p class="note">%BW = (f<sub>u</sub>−f<sub>l</sub>)/f<sub>c</sub>·100 → octave ≈ 70.7% · ⅓-octave ≈ 23.1%</p>
+      <hr style="border-color:#2a3a4d;margin:14px 0">
+      <label>Pipe length L (m), closed one end <input id="pipe-L" type="number" value="0.5" step="any"></label>
+      <label>Speed c (m/s) <input id="pipe-c" type="number" value="343" step="any"></label>
+      <button onclick="doPipe()">Natural frequencies</button>
+      <div id="pipe-out" class="result"></div>
+      <p class="note">f<sub>n</sub> = (2n−1)·c/(4L)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ DISTANCE ============================ -->
+<section class="tab" data-tab="dist">
+  <h2>Distance Attenuation / Geometric Spreading</h2>
+  <p class="desc">Given a level L₁ at distance r₁, find the level L₂ at distance r₂ as the sound spreads out.
+     A <strong>point source</strong> spreads spherically (−6 dB per doubling); a <strong>line source</strong>
+     (e.g. a continuous stream of traffic) spreads cylindrically (−3 dB per doubling).</p>
+
+  <div class="card">
+    <h3>Compute L₂ at a new distance</h3>
+    <div class="row">
+      <label>Known level L₁ (dB) <input id="dist-L1" type="number" value="78" step="any"></label>
+      <label>At distance r₁ (m) <input id="dist-r1" type="number" value="6.5" step="any"></label>
+      <label>New distance r₂ (m) <input id="dist-r2" type="number" value="65" step="any"></label>
+    </div>
+    <div class="row">
+      <label>+ extra source at r₁ (dB, optional) <input id="dist-extra" type="number" step="any" placeholder="e.g. background 89 — combined before spreading"></label>
+    </div>
+    <button onclick="doDistance()">Compute</button>
+    <div id="dist-out" class="result"></div>
+    <p class="note">
+      Point (spherical): L₂ = L₁ − 20·log<sub>10</sub>(r₂/r₁) &nbsp;·&nbsp;
+      Line (cylindrical): L₂ = L₁ − 10·log<sub>10</sub>(r₂/r₁)<br>
+      Optional extra source is energy-combined with L₁ at r₁ first: L₁ ← 10·log<sub>10</sub>(10<sup>L₁/10</sup> + 10<sup>L_extra/10</sup>)</p>
+  </div>
+
+  <div class="card">
+    <h3>Solve for distance from two levels</h3>
+    <p class="hint">Two SPLs measured along the same line: L₁ at the near point (distance y from the source)
+       and L₂ a further Δr away. Back out the near distance y (e.g. a rifle = point source).</p>
+    <div class="row">
+      <label>Near level L₁ (dB) <input id="invd-L1" type="number" value="128" step="any"></label>
+      <label>Far level L₂ (dB) <input id="invd-L2" type="number" value="98" step="any"></label>
+      <label>Extra distance Δr (m) <input id="invd-dr" type="number" value="25.2" step="any"></label>
+    </div>
+    <button onclick="doInvDistance()">Solve y</button>
+    <div id="invd-out" class="result"></div>
+    <p class="note">y = Δr / (10<sup>ΔL/20</sup> − 1) point &nbsp;·&nbsp; y = Δr / (10<sup>ΔL/10</sup> − 1) line &nbsp;·&nbsp; ΔL = L₁−L₂</p>
+  </div>
+
+  <div class="card">
+    <h3>SPL from Sound Power Level (free field)</h3>
+    <p class="hint">Predict L<sub>p</sub> at distance r from a source of known L<sub>w</sub> (Unit 3).</p>
+    <div class="row">
+      <label>L<sub>w</sub> (dB) <input id="lwlp-Lw" type="number" value="120" step="any"></label>
+      <label>Distance r (m) <input id="lwlp-r" type="number" value="10" step="any"></label>
+      <label>Source type
+        <select id="lwlp-type">
+          <option value="pf">Point, free field (−11)</option>
+          <option value="pg">Point, on ground (−8)</option>
+          <option value="lf">Line, free field (−8)</option>
+          <option value="lg">Line, on ground (−5)</option>
+        </select></label>
+    </div>
+    <button onclick="doLwLp()">Compute L<sub>p</sub></button>
+    <div id="lwlp-out" class="result"></div>
+    <p class="note">Point: L<sub>p</sub>=L<sub>w</sub>−20·log<sub>10</sub>(r)−{11|8} · Line: L<sub>p</sub>=L<sub>w</sub>−10·log<sub>10</sub>(r)−{8|5}</p>
+  </div>
+</section>
+
+<!-- ============================ ROOM ============================ -->
+<section class="tab" data-tab="room">
+  <h2>Room Acoustics — Reverberation &amp; Room Equation</h2>
+  <p class="desc">Sabine reverberation, average absorption, room constant and the direct-plus-reverberant
+     field (Units 3–4).</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Sabine reverberation time</h3>
+      <p class="hint">Fill any three; leave one blank to solve for it.</p>
+      <label>Volume V (m³) <input id="rt-V" type="number" value="200" step="any"></label>
+      <label>Total surface S (m²) <input id="rt-S" type="number" value="240" step="any"></label>
+      <label>Average absorption ᾱ <input id="rt-a" type="number" value="0.15" step="any"></label>
+      <label>T₆₀ (s) <input id="rt-T" type="number" step="any" placeholder="(blank to solve)"></label>
+      <button onclick="doRT()">Solve</button>
+      <div id="rt-out" class="result"></div>
+      <p class="note">T₆₀ = 0.161·V/(ᾱ·S) · Absorption area A = ᾱ·S = 0.161·V/T₆₀</p>
+    </div>
+
+    <div class="card">
+      <h3>Average absorption coefficient</h3>
+      <p class="hint">One surface per row: <code>area, α</code> (e.g. <code>60, 0.3</code>).</p>
+      <div class="lt-grid" data-target="aa-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>area, α</code>)</summary>
+      <textarea id="aa-list" rows="4" placeholder="60, 0.3&#10;120, 0.05&#10;60, 0.1"></textarea>
+      <button type="button" data-applygrid="aa-list">Apply to grid</button></details>
+      <button onclick="doAvgAbs()">Compute ᾱ</button>
+      <div id="aa-out" class="result"></div>
+      <p class="note">ᾱ = Σ(α<sub>i</sub>·S<sub>i</sub>) / ΣS<sub>i</sub></p>
+    </div>
+
+    <div class="card">
+      <h3>Room constant</h3>
+      <label>Average absorption ᾱ <input id="rc-a" type="number" value="0.15" step="any"></label>
+      <label>Total surface S (m²) <input id="rc-S" type="number" value="240" step="any"></label>
+      <button onclick="doRoomConst()">Compute R</button>
+      <div id="rc-out" class="result"></div>
+      <p class="note">R = ᾱ·S/(1−ᾱ)</p>
+    </div>
+
+    <div class="card">
+      <h3>Room equation — L<sub>p</sub> from L<sub>w</sub></h3>
+      <p class="hint">Direct + reverberant field at distance r in a room of constant R.</p>
+      <div class="row">
+        <label>L<sub>w</sub> (dB) <input id="re-Lw" type="number" value="100" step="any"></label>
+        <label>r (m) <input id="re-r" type="number" value="3" step="any"></label>
+      </div>
+      <div class="row">
+        <label>Room constant R (m²) <input id="re-R" type="number" value="42" step="any"></label>
+        <label>Directivity Q
+          <select id="re-Q"><option value="1">1 — free</option><option value="2">2 — wall</option>
+            <option value="4">4 — edge</option><option value="8">8 — corner</option></select></label>
+      </div>
+      <button onclick="doRoomEq()">Compute L<sub>p</sub></button>
+      <div id="re-out" class="result"></div>
+      <p class="note">L<sub>p</sub> = L<sub>w</sub> + 10·log<sub>10</sub>( Q/(4πr²) + 4/R )</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Reverberant level change — add / remove absorption (panels)</h3>
+    <p class="hint">Predict how the space-averaged octave-band SPLs change when absorbing material is added or
+       removed. From the measured reverberation time the current room absorption is
+       <span class="f">A₁ = 0.161·V/T₆₀</span>; the absorber contributes
+       <span class="f">A<sub>abs</sub> = S<sub>abs</sub>·α</span> (use the <em>total exposed</em> area — both
+       sides of a suspended panel). The reverberant field then shifts by
+       <span class="f">ΔL<sub>p</sub> = 10·log<sub>10</sub>(A₁/A₂)</span>, with A₂ = A₁ ∓ A<sub>abs</sub>.
+       Fill L<sub>p</sub>, T₆₀ and α per band; leave a band blank to ignore it.</p>
+    <div class="row">
+      <label>Change
+        <select id="rv-mode">
+          <option value="remove" selected>Remove absorber (level rises)</option>
+          <option value="add">Add absorber (level falls)</option>
+        </select></label>
+      <label>Overall weighting
+        <select id="rv-net">
+          <option value="A" selected>A → dB(A)</option>
+          <option value="B">B → dB(B)</option>
+          <option value="C">C → dB(C)</option>
+          <option value="Z">None → dB</option>
+        </select></label>
+      <label>Room volume V (m³) <input id="rv-V" type="number" step="any" placeholder="408"></label>
+      <label>Absorber area S<sub>abs</sub> (m²) <input id="rv-Sabs" type="number" step="any" placeholder="48"></label>
+      <button onclick="prefillPanels()">Load Q4 example</button>
+    </div>
+    <div id="rv-table-wrap"></div>
+    <button onclick="doReverbChange()">Compute</button>
+    <div id="rv-out" class="result"></div>
+    <p class="note">A₁ = 0.161·V/T₆₀ · A<sub>abs</sub> = S<sub>abs</sub>·α · A₂ = A₁ ∓ A<sub>abs</sub> ·
+       ΔL<sub>p</sub> = 10·log<sub>10</sub>(A₁/A₂) · overall = Σ<sub>bands</sub> of (L<sub>p</sub> + W).</p>
+  </div>
+</section>
+
+<!-- ============================ SOUND POWER ============================ -->
+<section class="tab" data-tab="power">
+  <h2>Sound Power Measurement (Corrections)</h2>
+  <p class="desc">Determine L<sub>w</sub> from surface SPL measurements with background (K₁) and
+     environmental (K₂) corrections (Unit 4).</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Background correction K₁</h3>
+      <label>Mean SPL, source on L̄<sub>p(ST)</sub> (dB) <input id="k1-st" type="number" value="80" step="any"></label>
+      <label>Mean SPL, background L̄<sub>p(B)</sub> (dB) <input id="k1-b" type="number" value="71" step="any"></label>
+      <button onclick="doK1()">Compute K₁</button>
+      <div id="k1-out" class="result"></div>
+      <p class="note">ΔL = L̄<sub>ST</sub>−L̄<sub>B</sub> · K₁ = −10·log<sub>10</sub>(1−10<sup>−ΔL/10</sup>)</p>
+    </div>
+
+    <div class="card">
+      <h3>Environmental correction K₂</h3>
+      <label>Measurement surface area S (m²) <input id="k2-S" type="number" value="6.28" step="any"></label>
+      <label>Room absorption area A (m²) — A=0.16V/T₆₀ <input id="k2-A" type="number" value="50" step="any"></label>
+      <button onclick="doK2()">Compute K₂</button>
+      <div id="k2-out" class="result"></div>
+      <p class="note">K₂ = 10·log<sub>10</sub>(1 + 4S/A)</p>
+    </div>
+
+    <div class="card">
+      <h3>Sound power level</h3>
+      <div class="row">
+        <label>Mean source SPL L̄<sub>p(ST)</sub> (dB) <input id="lwm-lp" type="number" value="80" step="any"></label>
+        <label>K₁ (dB) <input id="lwm-k1" type="number" value="0.6" step="any"></label>
+        <label>K₂ (dB) <input id="lwm-k2" type="number" value="0.4" step="any"></label>
+      </div>
+      <label>Measurement surface S (m²) — hemisphere 2πr² <input id="lwm-S" type="number" value="6.28" step="any"></label>
+      <button onclick="doLwMeas()">Compute L<sub>w</sub></button>
+      <div id="lwm-out" class="result"></div>
+      <p class="note">L<sub>w</sub> = (L̄<sub>p(ST)</sub> − K₁ − K₂) + 10·log<sub>10</sub>(S/S₀), S₀=1 m²</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>L<sub>w</sub> from free-field band SPLs (un-weight + surface area)</h3>
+    <p class="hint">For a source measured in a <strong>free field</strong> (e.g. sitting on the ground) with no
+       background/room corrections needed. Enter the octave (or ⅓-octave) band SPLs; if they are
+       A/B/C-weighted they are first <strong>un-weighted</strong> to linear and energy-summed to the overall SPL
+       L̄<sub>p</sub>. The power then follows via intensity:
+       <span class="f">p²<sub>rms</sub> = p²<sub>ref</sub>·10<sup>L̄<sub>p</sub>/10</sup></span> →
+       <span class="f">I = p²<sub>rms</sub>/ρc</span> →
+       <span class="f">W = I·S</span> →
+       <span class="f">L<sub>w</sub> = 10·log<sub>10</sub>(W/W<sub>ref</sub>)</span>. Leave a band blank to ignore it.</p>
+    <div class="row">
+      <label>Band levels are
+        <select id="p-net">
+          <option value="A" selected>A-weighted dB(A) → un-weight</option>
+          <option value="B">B-weighted dB(B) → un-weight</option>
+          <option value="C">C-weighted dB(C) → un-weight</option>
+          <option value="Z">Linear dB (no change)</option>
+        </select></label>
+      <label>Band spacing
+        <select id="p-band" onchange="buildPowerBandTable()">
+          <option value="oct">Octave (63 Hz – 8 kHz)</option>
+          <option value="octfull" selected>Octave (31.5 Hz – 16 kHz)</option>
+          <option value="third">⅓ Octave (25 Hz – 20 kHz)</option>
+        </select></label>
+      <button onclick="prefillDrill()">Load drill example</button>
+    </div>
+    <div id="p-table-wrap"></div>
+    <div class="row">
+      <label>Measurement surface
+        <select id="p-surf">
+          <option value="hemi" selected>Hemisphere (S = 2πr²)</option>
+          <option value="sphere">Sphere (S = 4πr²)</option>
+          <option value="custom">Custom area S (m²)</option>
+        </select></label>
+      <label>Radius r (m) <input id="p-r" type="number" step="any" placeholder="0.43"></label>
+      <label>…or diameter (m) <input id="p-d" type="number" step="any" placeholder="0.86"></label>
+      <label>Custom area S (m²) <input id="p-S" type="number" step="any" placeholder="—"></label>
+    </div>
+    <div class="row">
+      <label>Air density ρ (kg/m³) <input id="p-rho" type="number" value="1.21" step="any"></label>
+      <label>Sound speed c (m/s) <input id="p-c" type="number" value="343" step="any"></label>
+    </div>
+    <button onclick="doPowerFromBands()">Compute L<sub>w</sub></button>
+    <div id="p-out" class="result"></div>
+    <p class="note">Un-weight: L<sub>lin</sub> = L<sub>weighted</sub> − W<sub>i</sub> &nbsp;·&nbsp;
+       I = p²<sub>rms</sub>/ρc &nbsp;·&nbsp; W = I·S &nbsp;·&nbsp; hemisphere S = 2πr², sphere S = 4πr².</p>
+  </div>
+</section>
+
+<!-- ============================ DUCT ============================ -->
+<section class="tab" data-tab="duct">
+  <h2>Duct: Sound Power → Microphone Voltage</h2>
+  <p class="desc">A source radiates a known acoustic <strong>power</strong> as plane waves along a pipe
+     (no reflections / anechoic termination). The wave fills the duct cross-section, so
+     <span class="f">I = W/A</span> with <span class="f">A = πd²/4</span>; for a plane wave
+     <span class="f">p<sub>rms</sub> = √(I·ρc)</span>, and a microphone of sensitivity <em>S</em> dB re 1 V/Pa
+     gives <span class="f">V = p<sub>rms</sub>·10<sup>S/20</sup></span> (Units 1–2, 4).</p>
+
+  <div class="card">
+    <h3>Compute microphone voltage</h3>
+    <div class="row">
+      <label>Sound power level L<sub>w</sub> (dB re 10⁻¹² W)
+        <input id="duct-Lw" type="number" value="93" step="any"></label>
+      <label>Pipe diameter d (mm)
+        <input id="duct-d" type="number" value="114" step="any"></label>
+      <label>Mic sensitivity S (dB re 1 V/Pa)
+        <input id="duct-sens" type="number" value="-68" step="any"></label>
+    </div>
+    <div class="row">
+      <label>Air density ρ (kg/m³)
+        <input id="duct-rho" type="number" value="1.21" step="any"></label>
+      <label>Sound speed c (m/s)
+        <input id="duct-c" type="number" value="343" step="any"></label>
+      <label>Highest frequency present (Hz) — optional, for plane-wave check
+        <input id="duct-fmax" type="number" value="1500" step="any"></label>
+    </div>
+    <button onclick="doDuct()">Compute voltage</button>
+    <div id="duct-out" class="result"></div>
+    <p class="note">W = 10⁻¹²·10<sup>L<sub>w</sub>/10</sup> &nbsp;·&nbsp; I = W/A &nbsp;·&nbsp;
+       p<sub>rms</sub> = √(I·ρc) &nbsp;·&nbsp; V = p<sub>rms</sub>·10<sup>S/20</sup>.
+       Higher-order modes cut on above f<sub>c</sub> = 1.841·c/(πd).</p>
   </div>
 </section>
 
@@ -139,54 +558,31 @@
   <div id="w-out" class="result"></div>
 </section>
 
-<!-- ============================ SOUND POWER ============================ -->
-<section class="tab" data-tab="power">
-  <h2>Sound Power from Measurement-Surface SPL</h2>
-  <p class="desc">Find the radiated <strong>sound power level</strong> from band SPLs measured on a surface that
-     encloses the source. The band levels are (optionally) un-weighted from dB(A)/dB(B)/dB(C) back to linear,
-     energy-summed into the overall SPL, then the measurement-surface area is added:
-     <span class="f">L<sub>W</sub> = L̄<sub>p</sub> + 10·log<sub>10</sub>(S / S<sub>0</sub>)</span>, S<sub>0</sub> = 1 m².
-     A source sitting on a hard floor radiates into a <em>hemisphere</em> (S = 2πr²); a free-field source into a
-     full <em>sphere</em> (S = 4πr²).</p>
+<!-- ============================ BAND WORKBENCH ============================ -->
+<section class="tab" data-tab="bands">
+  <h2>Band Workbench — ⅓-octave → octave → overall (one tab)</h2>
+  <p class="desc">Enter the measured <strong>⅓-octave</strong> band levels once. This combines each triplet of
+     ⅓-octaves into its octave band <em>(part a)</em>, then gives the overall SPL and the overall weighted
+     level <em>(part b)</em> — the whole "9 ⅓-octave bands" question without switching tabs. Leave a band blank
+     to ignore it. The weighted total is computed from the <strong>octave-band</strong> results (the method these
+     questions ask for).</p>
 
   <div class="row">
-    <label>Band levels are
-      <select id="p-net">
-        <option value="A" selected>A-weighted dB(A) → un-weight</option>
-        <option value="B">B-weighted dB(B) → un-weight</option>
-        <option value="C">C-weighted dB(C) → un-weight</option>
-        <option value="Z">Linear dB (no change)</option>
+    <label>Weighting for the overall weighted level
+      <select id="ba-net">
+        <option value="A" selected>A-weighting → dB(A)</option>
+        <option value="B">B-weighting → dB(B)</option>
+        <option value="C">C-weighting → dB(C)</option>
+        <option value="Z">None (linear) → dB</option>
       </select>
     </label>
-    <label>Band spacing
-      <select id="p-band" onchange="buildPowerTable()">
-        <option value="oct">Octave (63 Hz – 8 kHz)</option>
-        <option value="octfull" selected>Octave (31.5 Hz – 16 kHz)</option>
-        <option value="third">⅓ Octave (25 Hz – 20 kHz)</option>
-      </select>
-    </label>
-    <button onclick="prefillDrill()">Load drill example</button>
   </div>
 
-  <div id="p-table-wrap"></div>
-
-  <div class="row">
-    <label>Measurement surface
-      <select id="p-surf">
-        <option value="hemi" selected>Hemisphere (S = 2πr²)</option>
-        <option value="sphere">Sphere (S = 4πr²)</option>
-        <option value="custom">Custom area S (m²)</option>
-      </select>
-    </label>
-    <label>Radius r (m) <input id="p-r" type="number" step="any" placeholder="0.43"></label>
-    <label>…or diameter (m) <input id="p-d" type="number" step="any" placeholder="0.86"></label>
-    <label>Custom area S (m²) <input id="p-S" type="number" step="any" placeholder="—"></label>
-  </div>
-  <button onclick="doPower()">Compute sound power level</button>
-  <div id="p-out" class="result"></div>
-  <p class="note">L<sub>W</sub> = L̄<sub>p</sub> + 10·log<sub>10</sub>(S/S₀) &nbsp;·&nbsp;
-     un-weight: L<sub>lin</sub> = L<sub>weighted</sub> − W<sub>i</sub> &nbsp;·&nbsp;
-     hemisphere S = 2πr², sphere S = 4πr².</p>
+  <div id="ba-table-wrap"></div>
+  <button onclick="doBandAnalysis()">Analyse</button>
+  <div id="ba-out" class="result"></div>
+  <p class="note">Octave SPL = combine its three ⅓-octaves · Overall = combine octaves ·
+     Weighted = Σ over octaves of (octave SPL + W at octave centre)</p>
 </section>
 
 <!-- ============================ LEQ ============================ -->
@@ -198,14 +594,25 @@
 
   <div class="card">
     <h3>L<sub>eq</sub> from levels &amp; durations</h3>
-    <p class="hint">One row per noise component: <code>level, duration</code> (e.g. <code>86, 3.5</code>).
-       Duration is the total time at that level.</p>
-    <textarea id="leq-list" rows="6" placeholder="86, 3.5&#10;88, 3&#10;95, 1&#10;98, 0.5">86, 3.5
-88, 3
-95, 1
-98, 0.5</textarea>
-    <label>Reference period T (same time unit) — leave blank to use Σt
-      <input id="leq-T" type="number" step="any" placeholder="8"></label>
+    <p class="hint">One row per noise component: <code>level, duration</code>. The duration may carry a unit
+       — <code>96, 15 min</code>, <code>91, 2 h</code>, <code>99, 30 s</code> — and units can be mixed
+       freely. A bare number (e.g. <code>3.5</code>) uses the default unit below. For sound-level-meter
+       periods (e.g. 30–70 s) enter the period <em>length</em> (<code>40 s</code>).</p>
+    <div class="lt-grid" data-target="leq-list"></div>
+    <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>level, duration</code>)</summary>
+    <textarea id="leq-list" rows="6" placeholder="96, 15 min&#10;91, 2 h&#10;99, 6 min&#10;86, 2.5 h">96, 15 min
+91, 2 h
+99, 6 min
+86, 2.5 h</textarea>
+    <button type="button" data-applygrid="leq-list">Apply to grid</button></details>
+    <div class="row">
+      <label>Default unit for bare numbers
+        <select id="leq-unit">
+          <option value="h">hours</option><option value="min">minutes</option><option value="s">seconds</option>
+        </select></label>
+      <label>Reference period T — leave blank to use Σt
+        <input id="leq-T" type="text" placeholder="e.g. 8 h, 480 min, blank = Σt"></label>
+    </div>
     <button onclick="doLeq()">Compute L<sub>eq</sub></button>
     <div id="leq-out" class="result"></div>
   </div>
@@ -214,15 +621,48 @@
     <h3>L<sub>eq</sub> from discrete events (e.g. train / vehicle pass-bys)</h3>
     <p class="hint">One row per event type: <code>level, single-event duration, number of events</code>.
        Set the reference period in the <em>same</em> time unit as the durations.</p>
-    <textarea id="evt-list" rows="5" placeholder="86, 12, 120&#10;79, 18, 200&#10;78, 24, 80">86, 12, 120
-79, 18, 200
-78, 24, 80</textarea>
-    <label>Reference period T
-      <input id="evt-T" type="number" value="86400" step="any"></label>
-    <span class="inline-hint">e.g. 24 h = 86400 s</span>
+    <div class="lt-grid" data-target="evt-list"></div>
+    <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>level, duration, count</code>)</summary>
+    <textarea id="evt-list" rows="5" placeholder="86, 12 s, 120&#10;79, 18 s, 200&#10;78, 24 s, 80">86, 12 s, 120
+79, 18 s, 200
+78, 24 s, 80</textarea>
+    <button type="button" data-applygrid="evt-list">Apply to grid</button></details>
+    <div class="row">
+      <label>Default unit for bare numbers
+        <select id="evt-unit">
+          <option value="s">seconds</option><option value="min">minutes</option><option value="h">hours</option>
+        </select></label>
+      <label>Reference period T
+        <input id="evt-T" type="text" value="24 h"></label>
+    </div>
     <button onclick="doEvents()">Compute L<sub>eq</sub></button>
     <div id="evt-out" class="result"></div>
     <p class="note">L<sub>eq,T</sub> = 10·log<sub>10</sub>( (1/T)·Σ N<sub>i</sub>·t<sub>i</sub>·10<sup>L<sub>i</sub>/10</sup> )</p>
+  </div>
+
+  <div class="card">
+    <h3>Time-varying level — L<sub>eq</sub> &amp; percentile L<sub>N</sub> (level given by a formula)</h3>
+    <p class="hint">For a noise whose level changes <em>continuously</em> over time (e.g. a ramp described by a
+       function). Enter the event as a list of time segments, one per line. Times are in any single unit
+       (it cancels out); <code>t</code> is measured from the start of the event.</p>
+    <ul class="hint" style="margin-top:0">
+      <li><b>Constant&nbsp;level:</b> <code>t1, t2, const, L</code> &nbsp;— level <code>L</code> dB(A) from t1 to t2</li>
+      <li><b>Log ramp:</b> <code>t1, t2, ramp, a, b, c</code> &nbsp;— level = 10·log₁₀(a·t + b) + c</li>
+    </ul>
+    <textarea id="tv-list" rows="4" placeholder="0, 1, ramp, 9, 1, 80&#10;1, 5, const, 80">0, 1, ramp, 9, 1, 80
+1, 5, const, 80</textarea>
+    <div class="row">
+      <label>Percentile N for L<sub>N</sub> (level exceeded N% of the time)
+        <input id="tv-N" type="number" value="10" step="any"></label>
+      <label>Reference period T — leave blank to use the full span
+        <input id="tv-T" type="number" step="any" placeholder="(blank = t_end − t_start)"></label>
+      <button onclick="prefillTimeVarying()">Load Q5 example</button>
+    </div>
+    <button onclick="doTimeVarying()">Compute L<sub>eq</sub> &amp; L<sub>N</sub></button>
+    <div id="tv-out" class="result"></div>
+    <p class="note">L<sub>eq</sub> = 10·log<sub>10</sub>( (1/T)·∫ 10<sup>L(t)/10</sup> dt ) ·
+       ramp ∫ = 10<sup>c/10</sup>·[a(t₂²−t₁²)/2 + b(t₂−t₁)] ·
+       L<sub>N</sub> = level exceeded N% of the period.</p>
   </div>
 </section>
 
@@ -233,12 +673,20 @@
 
   <div class="card">
     <h3>Worker shift exposure</h3>
-    <p class="hint">One row per phase: <code>level dB(A), duration (h)</code>.</p>
-    <textarea id="dose-list" rows="5">86, 3.5
-88, 3
-95, 1
-98, 0.5</textarea>
+    <p class="hint">One row per phase: <code>level dB(A), duration</code>. Durations may carry a unit
+       (<code>96, 15 min</code>, <code>91, 2 h</code>) and may be mixed; bare numbers use the default unit.</p>
+    <div class="lt-grid" data-target="dose-list"></div>
+    <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>level, duration</code>)</summary>
+    <textarea id="dose-list" rows="5">96, 15 min
+91, 2 h
+99, 6 min
+86, 2.5 h</textarea>
+    <button type="button" data-applygrid="dose-list">Apply to grid</button></details>
     <div class="row">
+      <label>Default unit for bare numbers
+        <select id="dose-unit">
+          <option value="h">hours</option><option value="min">minutes</option><option value="s">seconds</option>
+        </select></label>
       <label>Criterion level L<sub>c</sub> (dB(A)) <input id="dose-Lc" type="number" value="85" step="any"></label>
       <label>Exchange rate q (dB) <input id="dose-q" type="number" value="3" step="any"></label>
       <label>Criterion time T<sub>c</sub> (h) <input id="dose-Tc" type="number" value="8" step="any"></label>
@@ -248,6 +696,20 @@
     <p class="note">Max permissible time at L<sub>Aeq</sub>: &nbsp;
        T = T<sub>c</sub> / 2<sup>(L<sub>Aeq</sub> − L<sub>c</sub>)/q</sup> &nbsp;·&nbsp;
        Dose = (Σt<sub>i</sub>/T<sub>i</sub>) where T<sub>i</sub> = T<sub>c</sub>/2<sup>(L<sub>i</sub>−L<sub>c</sub>)/q</sup></p>
+  </div>
+
+  <div class="card">
+    <h3>Max permissible time for a steady level</h3>
+    <p class="hint">For exposure to one continuous noise level — no table needed.</p>
+    <div class="row">
+      <label>Noise level L (dB(A)) <input id="mpt-L" type="number" value="89" step="any"></label>
+      <label>Criterion level L<sub>c</sub> (dB(A)) <input id="mpt-Lc" type="number" value="85" step="any"></label>
+      <label>Exchange rate q (dB) <input id="mpt-q" type="number" value="3" step="any"></label>
+      <label>Criterion time T<sub>c</sub> (h) <input id="mpt-Tc" type="number" value="8" step="any"></label>
+    </div>
+    <button onclick="doMaxTime()">Compute T</button>
+    <div id="mpt-out" class="result"></div>
+    <p class="note">T = T<sub>c</sub> / 2<sup>(L − L<sub>c</sub>)/q</sup></p>
   </div>
 </section>
 
@@ -302,6 +764,22 @@
   </div>
 </section>
 
+<!-- ============================ COMMUNITY ============================ -->
+<section class="tab" data-tab="community">
+  <h2>Community Noise — Day–Night Level</h2>
+  <p class="desc">L<sub>dn</sub> applies a +10 dB penalty to night-time (22:00–07:00) noise (Unit 5).</p>
+  <div class="card">
+    <h3>Day–night average level L<sub>dn</sub></h3>
+    <div class="row">
+      <label>Daytime L<sub>Aeq,day</sub> (15 h, dB(A)) <input id="ldn-day" type="number" value="65" step="any"></label>
+      <label>Night-time L<sub>Aeq,night</sub> (9 h, dB(A)) <input id="ldn-night" type="number" value="55" step="any"></label>
+    </div>
+    <button onclick="doLdn()">Compute L<sub>dn</sub></button>
+    <div id="ldn-out" class="result"></div>
+    <p class="note">L<sub>dn</sub> = 10·log<sub>10</sub>( (1/24)[ 15·10<sup>L<sub>day</sub>/10</sup> + 9·10<sup>(L<sub>night</sub>+10)/10</sup> ] )</p>
+  </div>
+</section>
+
 <!-- ============================ STATS ============================ -->
 <section class="tab" data-tab="stats">
   <h2>Statistical Levels &amp; SEL</h2>
@@ -334,52 +812,112 @@
       <h3>Sort values into terms</h3>
       <p class="hint">Paste the measured values; they are assigned biggest→smallest as
          SEL, L<sub>1</sub>, L<sub>eq</sub>, L<sub>99</sub>.</p>
+      <div class="lt-grid" data-target="sort-list"></div>
+      <details class="bulk"><summary>Bulk paste / edit as text (one value per line)</summary>
       <textarea id="sort-list" rows="4">93.5
 31.5
 84.4
 102.5</textarea>
+      <button type="button" data-applygrid="sort-list">Apply to grid</button></details>
       <button onclick="doSort()">Assign</button>
       <div id="sort-out" class="result"></div>
     </div>
   </div>
 </section>
 
-<!-- ============================ DUCT ============================ -->
-<section class="tab" data-tab="duct">
-  <h2>Duct: Sound Power → Microphone Voltage</h2>
-  <p class="desc">A source radiates a known acoustic <strong>power</strong> as plane waves down a pipe
-     (no reflections / anechoic termination). The wave fills the duct cross-section, so the intensity is
-     <span class="f">I = W / A</span> with <span class="f">A = πd²/4</span>. For a plane wave the RMS pressure is
-     <span class="f">p = √(I·ρc)</span>, and a microphone of sensitivity <em>S</em> dB re 1 V/Pa gives
-     <span class="f">V = p · 10<sup>S/20</sup></span>.</p>
+<!-- ============================ INSULATION ============================ -->
+<section class="tab" data-tab="tl">
+  <h2>Sound Insulation — Transmission Loss</h2>
+  <p class="desc">Mass-law transmission loss of a partition, interface impedance and transmission/reflection
+     coefficients (Unit 7).</p>
 
-  <div class="card">
-    <h3>Compute microphone voltage</h3>
-    <div class="row">
-      <label>Sound power level L<sub>W</sub> (dB)
-        <input id="duct-Lw" type="number" value="93" step="any"></label>
-      <label>Power reference W<sub>ref</sub> (W)
-        <input id="duct-Wref" type="number" value="1e-12" step="any"></label>
-      <label>Pipe diameter d (mm)
-        <input id="duct-d" type="number" value="114" step="any"></label>
+  <div class="grid2">
+    <div class="card">
+      <h3>Mass Law (normal incidence, in air)</h3>
+      <p class="hint">Enter surface mass directly, or density × thickness.</p>
+      <div class="row">
+        <label>Surface mass M (kg/m²) <input id="ml-M" type="number" step="any" placeholder="e.g. 10"></label>
+        <label>or density ρ<sub>s</sub> (kg/m³) <input id="ml-rho" type="number" step="any" placeholder="2500"></label>
+        <label>× thickness t (mm) <input id="ml-t" type="number" step="any" placeholder="3"></label>
+      </div>
+      <label>Frequency f (Hz) <input id="ml-f" type="number" value="1000" step="any"></label>
+      <button onclick="doMassLaw()">Compute TL</button>
+      <div id="ml-out" class="result"></div>
+      <p class="note">TL = 20·log<sub>10</sub>(M·f) − 42.4 dB &nbsp;(=20·log<sub>10</sub>(πMf/ρc)). +6 dB per doubling of M or f.</p>
     </div>
-    <div class="row">
-      <label>Mic sensitivity S (dB re 1 V/Pa)
-        <input id="duct-sens" type="number" value="-68" step="any"></label>
-      <label>Air density ρ (kg/m³)
-        <input id="duct-rho" type="number" value="1.21" step="any"></label>
-      <label>Sound speed c (m/s)
-        <input id="duct-c" type="number" value="343" step="any"></label>
+
+    <div class="card">
+      <h3>Interface: impedance ratio &amp; coefficients</h3>
+      <div class="row">
+        <label>Medium 1 ρc (rayls) <input id="if-z1" type="number" value="415" step="any"></label>
+        <label>Medium 2 ρc (rayls) <input id="if-z2" type="number" value="1480000" step="any"></label>
+      </div>
+      <button onclick="doInterface()">Compute</button>
+      <div id="if-out" class="result"></div>
+      <p class="note">r=z₂/z₁ · α<sub>t</sub>=4r/(r+1)² · α<sub>r</sub>=((r−1)/(r+1))² · TL=−10·log<sub>10</sub>(α<sub>t</sub>)</p>
     </div>
-    <div class="row">
-      <label>Highest frequency present (Hz) — optional, for plane-wave check
-        <input id="duct-fmax" type="number" value="1500" step="any"></label>
+
+    <div class="card">
+      <h3>TL from transmission coefficient</h3>
+      <label>Transmission coefficient α<sub>t</sub> <input id="tlt-a" type="number" value="0.001" step="any"></label>
+      <button onclick="doTLcoef()">Compute TL</button>
+      <div id="tlt-out" class="result"></div>
+      <p class="note">TL = −10·log<sub>10</sub>(α<sub>t</sub>) = 10·log<sub>10</sub>(1/α<sub>t</sub>)</p>
     </div>
-    <button onclick="doDuct()">Compute voltage</button>
-    <div id="duct-out" class="result"></div>
-    <p class="note">W = W<sub>ref</sub>·10<sup>L<sub>W</sub>/10</sup> &nbsp;·&nbsp;
-       I = W/A &nbsp;·&nbsp; p = √(I·ρc) &nbsp;·&nbsp; V = p·10<sup>S/20</sup>.
-       Higher-order modes cut on above f<sub>c</sub> = 1.841·c/(πd).</p>
+
+    <div class="card">
+      <h3>Panel resonance frequency</h3>
+      <label>Stiffness per area K (N/m³) <input id="pr-K" type="number" value="1e6" step="any"></label>
+      <label>Surface mass M (kg/m²) <input id="pr-M" type="number" value="10" step="any"></label>
+      <button onclick="doPanelRes()">Compute f<sub>n</sub></button>
+      <div id="pr-out" class="result"></div>
+      <p class="note">f<sub>n</sub> = (1/2π)·√(K/M)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MUFFLERS ============================ -->
+<section class="tab" data-tab="muffler">
+  <h2>Mufflers &amp; Pipe Transmission</h2>
+  <p class="desc">Reactive silencer elements: area changes and expansion chambers, plus TL / IL / NR
+     definitions (Unit 8).</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Sudden area change</h3>
+      <div class="row">
+        <label>Pipe area S₁ (m²) <input id="ac-s1" type="number" value="0.01" step="any"></label>
+        <label>Chamber/exit area S₂ (m²) <input id="ac-s2" type="number" value="0.1" step="any"></label>
+      </div>
+      <button onclick="doAreaChange()">Compute TL</button>
+      <div id="ac-out" class="result"></div>
+      <p class="note">T<sub>t</sub> = 4S₁S₂/(S₁+S₂)² · TL = −10·log<sub>10</sub>(T<sub>t</sub>)</p>
+    </div>
+
+    <div class="card">
+      <h3>Simple expansion chamber</h3>
+      <div class="row">
+        <label>Pipe area S₁ (m²) <input id="ec-s1" type="number" value="0.01" step="any"></label>
+        <label>Chamber area S₂ (m²) <input id="ec-s2" type="number" value="0.1" step="any"></label>
+      </div>
+      <div class="row">
+        <label>Chamber length L (m) <input id="ec-L" type="number" value="0.3" step="any"></label>
+        <label>Frequency f (Hz) <input id="ec-f" type="number" value="250" step="any"></label>
+        <label>Speed c (m/s) <input id="ec-c" type="number" value="343" step="any"></label>
+      </div>
+      <button onclick="doExpChamber()">Compute TL</button>
+      <div id="ec-out" class="result"></div>
+      <p class="note">TL = 10·log<sub>10</sub>[ cos²(kL) + ¼(m+1/m)²·sin²(kL) ], m=S₂/S₁, k=2πf/c. Max at L=λ/4.</p>
+    </div>
+
+    <div class="card">
+      <h3>TL / IL / NR (level difference)</h3>
+      <label>Upstream / without-treatment level (dB) <input id="diff-1" type="number" value="100" step="any"></label>
+      <label>Downstream / with-treatment level (dB) <input id="diff-2" type="number" value="78" step="any"></label>
+      <button onclick="doLevelDiff()">Compute difference</button>
+      <div id="diff-out" class="result"></div>
+      <p class="note">TL = L<sub>w1</sub>−L<sub>w2</sub> · IL = L<sub>before</sub>−L<sub>after</sub> · NR = L<sub>in</sub>−L<sub>out</sub></p>
+    </div>
   </div>
 </section>
 
@@ -396,7 +934,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=28"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>

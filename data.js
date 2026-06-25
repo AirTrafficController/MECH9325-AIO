@@ -50,9 +50,21 @@ const THIRD = WEIGHTING.map(r => r[0]);
 // Quiz-1 vehicle example: octave band levels 63 Hz .. 8 kHz.
 const VEHICLE_EXAMPLE = { 63:93, 125:89, 250:80, 500:54, 1000:71, 2000:64, 4000:58, 8000:61 };
 
-// Electric-drill example: A-weighted octave band SPLs, 125 Hz .. 16 kHz,
-// measured on a 0.86 m diameter hemisphere (radius 0.43 m).
+// Electric-drill example (Quiz 3): A-weighted octave band SPLs, 125 Hz .. 16 kHz,
+// measured on a 0.86 m diameter hemisphere (radius 0.43 m), free field on the ground.
 const DRILL_EXAMPLE = { 125:43, 250:51, 500:61, 1000:71, 2000:76, 4000:78, 8000:72, 16000:63 };
+
+// Office-panel example (Quiz 4): remove six suspended absorber panels.
+// Room 12 x 10 x 3.4 m → V = 408 m³; six panels of 5 x 0.8 m exposed both sides → S_abs = 48 m².
+// Per octave band: measured L_p (dB), reverberation time T₆₀ (s), panel absorption coefficient α.
+const PANEL_EXAMPLE = {
+  V: 408, Sabs: 48, mode: 'remove', net: 'A',
+  bands: {
+    250:  { Lp: 81, T: 2.1, al: 0.30 },
+    500:  { Lp: 84, T: 1.9, al: 0.35 },
+    1000: { Lp: 83, T: 1.8, al: 0.37 },
+  },
+};
 
 // PSIL → max distance (m) for "just-reliable" communication at each voice effort.
 // Approximate Webster speech-communication data used in the course.
@@ -75,4 +87,17 @@ function voiceEffort(psil, dist) {
   if (adj < 65) return 'Very Loud to Shouting';
   if (adj < 75) return 'Shouting';
   return 'Communication impossible';
+}
+
+// ---- Physical constants & reference values (course defaults) ----
+const P_REF = 2e-5;       // reference sound pressure, Pa (20 uPa)
+const W_REF = 1e-12;      // reference sound power, W
+const I_REF = 1e-12;      // reference sound intensity, W/m^2
+const RHO_C = 415;        // characteristic impedance of air, rayls (1.21*343)
+const C_AIR = 343;        // speed of sound in air at 20 C, m/s
+
+// Octave / one-third octave band edge factors from a centre frequency.
+function bandEdges(fc, type) {
+  const k = type === 'third' ? Math.pow(2, 1 / 6) : Math.SQRT2;
+  return { lower: fc / k, upper: fc * k };
 }
