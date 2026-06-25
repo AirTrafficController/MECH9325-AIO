@@ -527,6 +527,7 @@ function prefillTimeVarying() {
   $('tv-T').value = '';
 }
 function doTimeVarying() {
+  $('tv-chart').innerHTML = '';
   const parsed = parseSegments($('tv-list').value);
   if (parsed.err) return show('tv-out', parsed.err, 'err');
   const segs = parsed.segs;
@@ -565,6 +566,56 @@ function doTimeVarying() {
       `Σ∫ = ${sci(E, 5)} · T = ${fmt(T)} · L_eq = 10·log₁₀(${sci(E / T, 5)}) = <b>${fmt(leq, 2)} dB(A)</b>`,
       ...(isNaN(LN) ? [] : [`L_${fmt(N)}%: highest level exceeded ${fmt(N)}% of the period = <b>${fmt(LN, 2)} dB(A)</b>`]),
     ]));
+
+  $('tv-chart').innerHTML = svgPlotLevel(segs, tStart, tEnd, isNaN(LN) ? null : LN, N);
+}
+// "Nice" axis tick values between min and max (~n divisions).
+function niceTicks(min, max, n) {
+  const span = max - min;
+  if (!(span > 0)) return [min];
+  const raw = span / n, mag = 10 ** Math.floor(lg(raw)), norm = raw / mag;
+  const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+  const ticks = [];
+  for (let v = Math.ceil(min / step) * step; v <= max + step * 1e-6; v += step) ticks.push(+v.toFixed(10));
+  return ticks;
+}
+// Inline SVG plot of L(t) vs time for the time-varying segments (theme-adaptive via currentColor).
+function svgPlotLevel(segs, tStart, tEnd, LN, N) {
+  const W = 560, H = 320, mL = 50, mR = 16, mT = 16, mB = 38;
+  const pW = W - mL - mR, pH = H - mT - mB;
+  // Sample each segment (constant → endpoints; ramp → smooth); boundary jumps draw as vertical drops.
+  const pts = [];
+  segs.forEach(s => {
+    const steps = s.type === 'const' ? 1 : 48;
+    for (let i = 0; i <= steps; i++) { const t = s.t1 + (s.t2 - s.t1) * i / steps; pts.push([t, segLevel(s, t)]); }
+  });
+  const vals = pts.map(p => p[1]);
+  let dMin = Math.min(...vals), dMax = Math.max(...vals);
+  if (LN != null) { dMin = Math.min(dMin, LN); dMax = Math.max(dMax, LN); }
+  const pad = Math.max(1, (dMax - dMin) * 0.12);
+  const yMin = Math.floor((dMin - pad) / 2) * 2, yMax = Math.ceil((dMax + pad) / 2) * 2;
+  const tx = t => mL + (t - tStart) / (tEnd - tStart) * pW;
+  const ty = L => mT + (yMax - L) / (yMax - yMin) * pH;
+  const xt = niceTicks(tStart, tEnd, 6), yt = niceTicks(yMin, yMax, 7);
+
+  const grid =
+    yt.map(v => `<line x1="${mL}" y1="${ty(v).toFixed(1)}" x2="${mL + pW}" y2="${ty(v).toFixed(1)}" stroke="currentColor" stroke-opacity=".12"/>`).join('') +
+    xt.map(v => `<line x1="${tx(v).toFixed(1)}" y1="${mT}" x2="${tx(v).toFixed(1)}" y2="${mT + pH}" stroke="currentColor" stroke-opacity=".12"/>`).join('');
+  const axes =
+    `<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT + pH}" stroke="currentColor" stroke-opacity=".5"/>` +
+    `<line x1="${mL}" y1="${mT + pH}" x2="${mL + pW}" y2="${mT + pH}" stroke="currentColor" stroke-opacity=".5"/>`;
+  const yl = yt.map(v => `<text x="${mL - 7}" y="${(ty(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="currentColor" fill-opacity=".8">${fmt(v, 0)}</text>`).join('');
+  const xl = xt.map(v => `<text x="${tx(v).toFixed(1)}" y="${mT + pH + 16}" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity=".8">${fmt(v, Number.isInteger(v) ? 0 : 2)}</text>`).join('');
+  const poly = `<polyline points="${pts.map(p => `${tx(p[0]).toFixed(1)},${ty(p[1]).toFixed(1)}`).join(' ')}" fill="none" stroke="#2dd4bf" stroke-width="2"/>`;
+  const lnLine = LN == null ? '' :
+    `<line x1="${mL}" y1="${ty(LN).toFixed(1)}" x2="${mL + pW}" y2="${ty(LN).toFixed(1)}" stroke="#f59e0b" stroke-width="1.3" stroke-dasharray="5 4"/>` +
+    `<text x="${mL + pW - 4}" y="${(ty(LN) - 5).toFixed(1)}" text-anchor="end" font-size="11" fill="#f59e0b">L${fmt(N)}% = ${fmt(LN, 1)}</text>`;
+  const titles =
+    `<text x="${mL + pW / 2}" y="${H - 3}" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity=".8">Time</text>` +
+    `<text transform="translate(12,${mT + pH / 2}) rotate(-90)" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity=".8">Level (dB)</text>`;
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto;display:block;margin-top:12px">` +
+    grid + axes + lnLine + poly + yl + xl + titles + `</svg>`;
 }
 
 /* ---------------- Noise dose ---------------- */
