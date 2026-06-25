@@ -93,7 +93,7 @@ const TAB_TAGS = {
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent max maximum machines permitted limit how many under night allowed',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
-  dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate',
+  dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate sound power level from spl reverse lw from lp anechoic chamber omni-directional omnidirectional',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
@@ -903,19 +903,39 @@ function doPipe() {
 }
 
 /* ---------------- Lw → Lp at distance ---------------- */
+function prefillQ2() {
+  $('lwlp-Lw').value = ''; $('lwlp-Lp').value = 88; $('lwlp-r').value = 1.7; $('lwlp-type').value = 'pf';
+}
 function doLwLp() {
-  const Lw = Number($('lwlp-Lw').value), r = Number($('lwlp-r').value), t = $('lwlp-type').value;
+  const hasLw = $('lwlp-Lw').value !== '', hasLp = $('lwlp-Lp').value !== '';
+  const Lw = Number($('lwlp-Lw').value), Lp = Number($('lwlp-Lp').value);
+  const r = Number($('lwlp-r').value), t = $('lwlp-type').value;
   if (!(r > 0)) return show('lwlp-out', 'Distance must be > 0.', 'err');
+  if (hasLw === hasLp) return show('lwlp-out', 'Fill exactly one of L_w / L_p and leave the other blank.', 'err');
   const map = { pf: [20, 11], pg: [20, 8], lf: [10, 8], lg: [10, 5] };
   const [coef, k] = map[t];
-  const Lp = Lw - coef * lg(r) - k;
+
+  if (hasLw) {                                   // forward: L_w → L_p
+    const out = Lw - coef * lg(r) - k;
+    $('lwlp-Lp').value = fmt(out, 2);
+    return show('lwlp-out',
+      `L<sub>p</sub> = <b>${fmt(out, 2)} dB</b>` +
+      work([
+        `L_p = L_w − ${coef}·log₁₀(r) − ${k}`,
+        `= ${fmt(Lw)} − ${coef}·log₁₀(${fmt(r)}) − ${k}`,
+        `= ${fmt(Lw)} − ${fmt(coef * lg(r), 3)} − ${k}`,
+        `= <b>${fmt(out, 2)} dB</b>`,
+      ]));
+  }
+  const out = Lp + coef * lg(r) + k;             // reverse: L_p → L_w
+  $('lwlp-Lw').value = fmt(out, 2);
   show('lwlp-out',
-    `L<sub>p</sub> = <b>${fmt(Lp, 2)} dB</b>` +
+    `L<sub>w</sub> = <b>${fmt(out, 2)} dB</b>` +
     work([
-      `L_p = L_w − ${coef}·log₁₀(r) − ${k}`,
-      `= ${fmt(Lw)} − ${coef}·log₁₀(${fmt(r)}) − ${k}`,
-      `= ${fmt(Lw)} − ${fmt(coef * lg(r), 3)} − ${k}`,
-      `= <b>${fmt(Lp, 2)} dB</b>`,
+      `L_w = L_p + ${coef}·log₁₀(r) + ${k}`,
+      `= ${fmt(Lp)} + ${coef}·log₁₀(${fmt(r)}) + ${k}`,
+      `= ${fmt(Lp)} + ${fmt(coef * lg(r), 3)} + ${k}`,
+      `= <b>${fmt(out, 2)} dB</b>`,
     ]));
 }
 
