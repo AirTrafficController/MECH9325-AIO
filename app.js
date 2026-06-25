@@ -906,14 +906,20 @@ function doPipe() {
 function prefillQ2() {
   $('lwlp-Lw').value = ''; $('lwlp-Lp').value = 88; $('lwlp-r').value = 1.7; $('lwlp-type').value = 'pf';
 }
+function prefillQ3() {
+  $('lwlp-Lw').value = ''; $('lwlp-Lp').value = 69; $('lwlp-r').value = 2; $('lwlp-type').value = 'pc';
+}
 function doLwLp() {
   const hasLw = $('lwlp-Lw').value !== '', hasLp = $('lwlp-Lp').value !== '';
   const Lw = Number($('lwlp-Lw').value), Lp = Number($('lwlp-Lp').value);
   const r = Number($('lwlp-r').value), t = $('lwlp-type').value;
   if (!(r > 0)) return show('lwlp-out', 'Distance must be > 0.', 'err');
   if (hasLw === hasLp) return show('lwlp-out', 'Fill exactly one of L_w / L_p and leave the other blank.', 'err');
-  const map = { pf: [20, 11], pg: [20, 8], lf: [10, 8], lg: [10, 5] };
+  // Point sources: k = 10·log10(4π/Q) for Q = 1/2/4/8 (free / 1 / 2 / 3 bounding surfaces).
+  const kp = Q => 10 * lg(4 * Math.PI / Q);
+  const map = { pf: [20, kp(1)], pg: [20, kp(2)], pe: [20, kp(4)], pc: [20, kp(8)], lf: [10, 8], lg: [10, 5] };
   const [coef, k] = map[t];
+  const ks = fmt(k, 2);
 
   if (hasLw) {                                   // forward: L_w → L_p
     const out = Lw - coef * lg(r) - k;
@@ -921,9 +927,9 @@ function doLwLp() {
     return show('lwlp-out',
       `L<sub>p</sub> = <b>${fmt(out, 2)} dB</b>` +
       work([
-        `L_p = L_w − ${coef}·log₁₀(r) − ${k}`,
-        `= ${fmt(Lw)} − ${coef}·log₁₀(${fmt(r)}) − ${k}`,
-        `= ${fmt(Lw)} − ${fmt(coef * lg(r), 3)} − ${k}`,
+        `L_p = L_w − ${coef}·log₁₀(r) − ${ks}`,
+        `= ${fmt(Lw)} − ${coef}·log₁₀(${fmt(r)}) − ${ks}`,
+        `= ${fmt(Lw)} − ${fmt(coef * lg(r), 3)} − ${ks}`,
         `= <b>${fmt(out, 2)} dB</b>`,
       ]));
   }
@@ -932,9 +938,9 @@ function doLwLp() {
   show('lwlp-out',
     `L<sub>w</sub> = <b>${fmt(out, 2)} dB</b>` +
     work([
-      `L_w = L_p + ${coef}·log₁₀(r) + ${k}`,
-      `= ${fmt(Lp)} + ${coef}·log₁₀(${fmt(r)}) + ${k}`,
-      `= ${fmt(Lp)} + ${fmt(coef * lg(r), 3)} + ${k}`,
+      `L_w = L_p + ${coef}·log₁₀(r) + ${ks}`,
+      `= ${fmt(Lp)} + ${coef}·log₁₀(${fmt(r)}) + ${ks}`,
+      `= ${fmt(Lp)} + ${fmt(coef * lg(r), 3)} + ${ks}`,
       `= <b>${fmt(out, 2)} dB</b>`,
     ]));
 }

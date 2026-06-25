@@ -301,17 +301,20 @@
       <label>Distance r (m) <input id="lwlp-r" type="number" value="10" step="any"></label>
       <label>Source type
         <select id="lwlp-type">
-          <option value="pf">Point, free field (−11)</option>
-          <option value="pg">Point, on ground (−8)</option>
+          <option value="pf">Point, free field — Q=1 (−11)</option>
+          <option value="pg">Point, on ground / 1 surface — Q=2 (−8)</option>
+          <option value="pe">Point, wall–floor edge / 2 surfaces — Q=4 (−5)</option>
+          <option value="pc">Point, corner / 3 surfaces — Q=8 (−2)</option>
           <option value="lf">Line, free field (−8)</option>
           <option value="lg">Line, on ground (−5)</option>
         </select></label>
     </div>
     <button onclick="doLwLp()">Compute</button>
     <button onclick="prefillQ2()">Load Q2 example</button>
+    <button onclick="prefillQ3()">Load Q3 example</button>
     <div id="lwlp-out" class="result"></div>
-    <p class="note">Point: L<sub>p</sub>=L<sub>w</sub>−20·log<sub>10</sub>(r)−{11|8} · Line: L<sub>p</sub>=L<sub>w</sub>−10·log<sub>10</sub>(r)−{8|5}
-       &nbsp;·&nbsp; reverse: L<sub>w</sub>=L<sub>p</sub>+{coef}·log<sub>10</sub>(r)+{k}</p>
+    <p class="note">Point: L<sub>p</sub>=L<sub>w</sub>−20·log<sub>10</sub>(r)−10·log<sub>10</sub>(4π/Q), Q=1/2/4/8 for 0/1/2/3 bounding surfaces ·
+       Line: −10·log<sub>10</sub>(r)−{8|5} &nbsp;·&nbsp; reverse: L<sub>w</sub>=L<sub>p</sub>+{coef}·log<sub>10</sub>(r)+k</p>
   </div>
 </section>
 
@@ -939,7 +942,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="data.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>
