@@ -99,7 +99,7 @@ const TAB_TAGS = {
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
   bands: 'band workbench third octave to octave combine spls overall spl a-weighted dba one third 1/3 octave consecutive bands triplet convert all in one part a b spectrum analysis nine bands',
-  leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq',
+  leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq integral integrate function ramp formula rising noise event percentile ln l10 l90 level exceeded percent five minute',
   dose: 'noise dose ohs oh&s occupational exposure limit 85 db permissible time exchange rate hearing shift worker percent percentage criterion',
   loud: 'loudness phon phons sone sones equal loudness contour conversion subjective hearing',
   speech: 'speech psil sil interference voice effort communication distance talker listener 500 1000 2000 articulation',
@@ -487,6 +487,83 @@ function doEvents() {
       `= 10·log₁₀( (1/${fmt(T)})·( ${sci(energy, 5)} ) )`,
       `= 10·log₁₀( ${sci(energy / T, 5)} )`,
       `= <b>${fmt(leq, 3)} dB</b>`,
+    ]));
+}
+
+/* ---- Time-varying level: exact L_eq integral + numeric percentile L_N ---- */
+// Parse one segment line: "t1,t2,const,L" or "t1,t2,ramp,a,b,c".
+function parseSegments(text) {
+  const segs = [];
+  for (const line of text.trim().split('\n')) {
+    const p = line.split(',').map(s => s.trim()).filter(s => s.length);
+    if (!p.length) continue;
+    const t1 = Number(p[0]), t2 = Number(p[1]), type = (p[2] || '').toLowerCase();
+    if (isNaN(t1) || isNaN(t2) || t2 <= t1) return { err: `Bad segment "${line}" — need t1 < t2.` };
+    if (type === 'const') {
+      const L = Number(p[3]);
+      if (isNaN(L)) return { err: `Constant segment "${line}" needs a level L.` };
+      segs.push({ t1, t2, type, L });
+    } else if (type === 'ramp') {
+      const a = Number(p[3]), b = Number(p[4]), c = Number(p[5]);
+      if ([a, b, c].some(isNaN)) return { err: `Ramp segment "${line}" needs a, b, c (L = 10·log₁₀(a·t+b)+c).` };
+      if (a * t1 + b <= 0 || a * t2 + b <= 0) return { err: `Ramp "${line}": a·t+b must stay > 0 over the segment.` };
+      segs.push({ t1, t2, type, a, b, c });
+    } else {
+      return { err: `Segment "${line}": type must be "const" or "ramp".` };
+    }
+  }
+  if (!segs.length) return { err: 'Enter at least one segment.' };
+  return { segs };
+}
+function segLevel(s, t) { return s.type === 'const' ? s.L : 10 * lg(s.a * t + s.b) + s.c; }
+// Closed-form energy integral ∫ 10^(L/10) dt over a segment.
+function segEnergy(s) {
+  if (s.type === 'const') return (s.t2 - s.t1) * 10 ** (s.L / 10);
+  return 10 ** (s.c / 10) * (s.a * (s.t2 * s.t2 - s.t1 * s.t1) / 2 + s.b * (s.t2 - s.t1));
+}
+function prefillTimeVarying() {
+  $('tv-list').value = '0, 1, ramp, 9, 1, 80\n1, 5, const, 80';
+  $('tv-N').value = 10;
+  $('tv-T').value = '';
+}
+function doTimeVarying() {
+  const parsed = parseSegments($('tv-list').value);
+  if (parsed.err) return show('tv-out', parsed.err, 'err');
+  const segs = parsed.segs;
+  const tStart = Math.min(...segs.map(s => s.t1)), tEnd = Math.max(...segs.map(s => s.t2));
+  let T = Number($('tv-T').value);
+  if (!(T > 0)) T = tEnd - tStart;
+
+  const E = segs.reduce((a, s) => a + segEnergy(s), 0);
+  const leq = 10 * lg(E / T);
+
+  // Numeric percentile L_N over the covered span (midpoint sampling).
+  const N = Number($('tv-N').value);
+  let LN = NaN;
+  if (N > 0 && N < 100) {
+    const n = 500000, arr = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      const t = tStart + (i + 0.5) / n * (tEnd - tStart);
+      const s = segs.find(s => t >= s.t1 && t <= s.t2) || segs[segs.length - 1];
+      arr[i] = segLevel(s, t);
+    }
+    arr.sort();
+    LN = arr[Math.floor((1 - N / 100) * (n - 1))];
+  }
+
+  const segDesc = segs.map(s => s.type === 'const'
+    ? `[${fmt(s.t1)}–${fmt(s.t2)}] const ${fmt(s.L)} dB → ∫ = ${sci(segEnergy(s), 4)}`
+    : `[${fmt(s.t1)}–${fmt(s.t2)}] ramp 10·log₁₀(${fmt(s.a)}t+${fmt(s.b)})+${fmt(s.c)} → ∫ = ${sci(segEnergy(s), 4)}`);
+
+  show('tv-out',
+    `L<sub>eq</sub> = <b>${fmt(leq, 2)} dB(A)</b>` +
+    (isNaN(LN) ? '' : `<br>L<sub>${fmt(N)}%</sub> = <b>${fmt(LN, 2)} dB(A)</b>
+       &nbsp;<span class="small">(level exceeded ${fmt(N)}% of the ${fmt(T)} period)</span>`) +
+    work([
+      `L_eq = 10·log₁₀( (1/T)·Σ ∫ 10^(L(t)/10) dt )`,
+      ...segDesc,
+      `Σ∫ = ${sci(E, 5)} · T = ${fmt(T)} · L_eq = 10·log₁₀(${sci(E / T, 5)}) = <b>${fmt(leq, 2)} dB(A)</b>`,
+      ...(isNaN(LN) ? [] : [`L_${fmt(N)}%: highest level exceeded ${fmt(N)}% of the period = <b>${fmt(LN, 2)} dB(A)</b>`]),
     ]));
 }
 

@@ -34,7 +34,7 @@ selector on that card. The reference period T also accepts a unit (e.g. `8 h`, `
 | **Sound Power** | Background correction K₁ · environmental K₂ · L<sub>w</sub> from surface SPL · free-field L<sub>w</sub> from band SPLs (un-weight dB(A)/dB(B)/dB(C) → linear, hemisphere/sphere/custom surface) | Unit 4, Quiz 3 |
 | **Duct → Voltage** | Radiated power in a pipe → intensity (W/A) → plane-wave pressure → microphone voltage (with higher-order-mode cut-on check) | Unit 1–2, 4 |
 | **Weighting** | A/B/C weighting of octave or ⅓-octave bands → dB(A)/dB(B)/dB(C) and linear total | Quiz 1 |
-| **Leq** | L<sub>eq</sub> from levels & durations (incl. meter periods) · from discrete events · **mixed time units** (s/min/h) | Quiz 4, 5, 7, 8 |
+| **Leq** | L<sub>eq</sub> from levels & durations (incl. meter periods) · from discrete events · time-varying level from a formula (exact L<sub>eq</sub> integral + percentile L<sub>N</sub>) · **mixed time units** (s/min/h) | Quiz 4, 5, 7, 8 |
 | **Noise Dose** | Worker shift L<sub>Aeq</sub>, dose %, OH&S limit check, max permissible time | Quiz 4 |
 | **Loudness** | Phons ↔ sones, equal-loudness-contour guidance | Quiz 6 |
 | **Speech (PSIL)** | Preferred Speech Interference Level + voice-effort guidance | Quiz 6 |

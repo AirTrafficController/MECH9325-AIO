@@ -639,6 +639,31 @@
     <div id="evt-out" class="result"></div>
     <p class="note">L<sub>eq,T</sub> = 10·log<sub>10</sub>( (1/T)·Σ N<sub>i</sub>·t<sub>i</sub>·10<sup>L<sub>i</sub>/10</sup> )</p>
   </div>
+
+  <div class="card">
+    <h3>Time-varying level — L<sub>eq</sub> &amp; percentile L<sub>N</sub> (level given by a formula)</h3>
+    <p class="hint">For a noise whose level changes <em>continuously</em> over time (e.g. a ramp described by a
+       function). Enter the event as a list of time segments, one per line. Times are in any single unit
+       (it cancels out); <code>t</code> is measured from the start of the event.</p>
+    <ul class="hint" style="margin-top:0">
+      <li><b>Constant&nbsp;level:</b> <code>t1, t2, const, L</code> &nbsp;— level <code>L</code> dB(A) from t1 to t2</li>
+      <li><b>Log ramp:</b> <code>t1, t2, ramp, a, b, c</code> &nbsp;— level = 10·log₁₀(a·t + b) + c</li>
+    </ul>
+    <textarea id="tv-list" rows="4" placeholder="0, 1, ramp, 9, 1, 80&#10;1, 5, const, 80">0, 1, ramp, 9, 1, 80
+1, 5, const, 80</textarea>
+    <div class="row">
+      <label>Percentile N for L<sub>N</sub> (level exceeded N% of the time)
+        <input id="tv-N" type="number" value="10" step="any"></label>
+      <label>Reference period T — leave blank to use the full span
+        <input id="tv-T" type="number" step="any" placeholder="(blank = t_end − t_start)"></label>
+      <button onclick="prefillTimeVarying()">Load Q5 example</button>
+    </div>
+    <button onclick="doTimeVarying()">Compute L<sub>eq</sub> &amp; L<sub>N</sub></button>
+    <div id="tv-out" class="result"></div>
+    <p class="note">L<sub>eq</sub> = 10·log<sub>10</sub>( (1/T)·∫ 10<sup>L(t)/10</sup> dt ) ·
+       ramp ∫ = 10<sup>c/10</sup>·[a(t₂²−t₁²)/2 + b(t₂−t₁)] ·
+       L<sub>N</sub> = level exceeded N% of the period.</p>
+  </div>
 </section>
 
 <!-- ============================ DOSE ============================ -->
@@ -909,7 +934,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=27"></script>
-<script src="app.js?v=27"></script>
+<script src="data.js?v=28"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>
