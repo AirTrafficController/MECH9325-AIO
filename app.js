@@ -80,6 +80,7 @@ function show(id, html, cls = 'ok') {
 
 /* ---------------- Tabs ---------------- */
 const TABS = [
+  ['map', '🗺 Formula Map'],
   ['levels', 'Levels'], ['combine', 'Combine'], ['subtract', 'Subtract'],
   ['waves', 'Waves'], ['dist', 'Distance'], ['room', 'Room Acoustics'],
   ['power', 'Sound Power'], ['duct', 'Duct → Voltage'], ['weight', 'Weighting'], ['bands', 'Band Workbench'], ['leq', 'Leq'],
@@ -89,6 +90,7 @@ const TABS = [
 ];
 // Search keywords/tags per tab (lowercase). Matched against the typed query.
 const TAB_TAGS = {
+  map: 'map mapping graph network diagram overview connections relationships related links concept formula visual navigation obsidian explore mind map web',
   levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts psd power spectral density pa2/hz pa^2/hz integrate area trapezoid band linear flat mean square spectrum frequency limits',
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent max maximum machines permitted limit how many under night allowed',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
@@ -126,6 +128,8 @@ function selectTab(id) {
     s.classList.toggle('active', s.dataset.tab === id));
   document.querySelectorAll('#tabs button').forEach(b =>
     b.classList.toggle('sel', b.dataset.for === id));
+  // The map needs a visible container before it can lay out / animate.
+  if (id === 'map') startMap();
 }
 
 /* ---------------- Tab search / tag filter ---------------- */
@@ -157,6 +161,279 @@ function initSearch() {
     if (e.key === 'Escape') { box.value = ''; apply(); }
   });
   apply();
+}
+
+/* ===================================================================
+   Formula Map — Obsidian-style relationship graph
+   A force-directed network showing how the calculators relate. Each
+   node is a calculator tab; each edge is a shared formula / variable.
+   Click a node to jump to that calculator; drag to rearrange; hover to
+   highlight its connections and reveal the linking formula.
+   =================================================================== */
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+// Thematic groups (colour-coded) the calculators fall into.
+const MAP_GROUPS = {
+  core:       { label: 'Levels & dB arithmetic', color: '#3fa7ff' },
+  waves:      { label: 'Waves',                   color: '#9d7bff' },
+  prop:       { label: 'Propagation & rooms',     color: '#2bd6a8' },
+  freq:       { label: 'Frequency & weighting',   color: '#ffb84d' },
+  exposure:   { label: 'Exposure & ratings',      color: '#ff7eb6' },
+  insulation: { label: 'Insulation & mufflers',   color: '#ff6b6b' },
+};
+
+// Nodes: id must match a tab id so a click can navigate there.
+// f = the headline formula(s) shown in the hover tooltip.
+const MAP_NODES = [
+  { id: 'levels',    label: 'Levels',         group: 'core',       f: 'Lp = 20·log(p/2e-5) · Lw = 10·log(W/1e-12) · LI = 10·log(I/1e-12)' },
+  { id: 'combine',   label: 'Combine',        group: 'core',       f: 'L_tot = 10·log( Σ 10^(Lᵢ/10) )' },
+  { id: 'subtract',  label: 'Subtract',       group: 'core',       f: 'L_rem = 10·log( 10^(L_tot/10) − 10^(L_bg/10) )' },
+  { id: 'waves',     label: 'Waves',          group: 'waves',      f: 'c = f·λ = √(γ·R·T) · k = 2π/λ · u = p/ρc' },
+  { id: 'dist',      label: 'Distance',       group: 'prop',       f: 'Point: −6 dB/doubling · Line: −3 dB/doubling · Lp = Lw − 20log r − 11' },
+  { id: 'room',      label: 'Room Acoustics', group: 'prop',       f: 'T₆₀ = 0.161V/(ᾱS) · R = ᾱS/(1−ᾱ) · Lp = Lw + 10log(Q/4πr² + 4/R)' },
+  { id: 'power',     label: 'Sound Power',    group: 'prop',       f: 'Lw = L̄p + 10log(S/S₀) · K₁ background · K₂ environment' },
+  { id: 'duct',      label: 'Duct → Voltage', group: 'prop',       f: 'Lw → I = W/A → p = √(I·ρc) → V = p·sensitivity' },
+  { id: 'weight',    label: 'Weighting',      group: 'freq',       f: 'L_W = 10·log( Σ 10^((Lᵢ + Wᵢ)/10) )  →  dB(A)/dB(B)/dB(C)' },
+  { id: 'bands',     label: 'Band Workbench', group: 'freq',       f: 'Combine ⅓-octave → octave → overall SPL & dB(A)' },
+  { id: 'table',     label: 'Tables',         group: 'freq',       f: 'A / B / C weighting network reference values' },
+  { id: 'leq',       label: 'Leq',            group: 'exposure',   f: 'L_eq = 10·log( (1/T)·Σ tᵢ·10^(Lᵢ/10) )' },
+  { id: 'dose',      label: 'Noise Dose',     group: 'exposure',   f: 'Dose % · T_max = T_c / 2^((L_Aeq − L_c)/q)' },
+  { id: 'loud',      label: 'Loudness',       group: 'exposure',   f: 'S = 2^((L_L − 40)/10)  (phons ↔ sones)' },
+  { id: 'speech',    label: 'Speech (PSIL)',  group: 'exposure',   f: 'PSIL = (L₅₀₀ + L₁₀₀₀ + L₂₀₀₀)/3' },
+  { id: 'community', label: 'Community',      group: 'exposure',   f: 'L_dn = 10·log( (1/24)[15·10^(Ld/10) + 9·10^((Ln+10)/10)] )' },
+  { id: 'stats',     label: 'Stats / SEL',    group: 'exposure',   f: 'SEL = L_eq + 10·log(T/1s) · L₁/L₁₀/L₉₀/L₉₉' },
+  { id: 'tl',        label: 'Insulation (TL)',group: 'insulation', f: 'TL = 20·log(M·f) − 42.4 · TL = −10·log(α_t)' },
+  { id: 'muffler',   label: 'Mufflers',       group: 'insulation', f: 'τ = 4S₁S₂/(S₁+S₂)² · TL = −10·log(τ) · IL · NR' },
+];
+
+// Edges: a–b are node ids, label = the shared formula / quantity.
+const MAP_EDGES = [
+  { a: 'levels',  b: 'combine',  label: 'Σ 10^(Lᵢ/10)' },
+  { a: 'levels',  b: 'subtract', label: 'energy −' },
+  { a: 'combine', b: 'subtract', label: 'inverse of' },
+  { a: 'levels',  b: 'weight',   label: 'Lᵢ → dB(A)' },
+  { a: 'weight',  b: 'bands',    label: 'octave / ⅓-oct' },
+  { a: 'weight',  b: 'table',    label: 'A/B/C values' },
+  { a: 'weight',  b: 'leq',      label: 'dB(A) levels' },
+  { a: 'weight',  b: 'loud',     label: 'spectrum' },
+  { a: 'bands',   b: 'speech',   label: '500·1k·2k bands' },
+  { a: 'levels',  b: 'dist',     label: 'Lp ↔ Lw' },
+  { a: 'levels',  b: 'power',    label: 'Lw' },
+  { a: 'levels',  b: 'duct',     label: 'Lw → I → p → V' },
+  { a: 'levels',  b: 'leq',      label: 'energy average' },
+  { a: 'dist',    b: 'room',     label: 'Lp = Lw + 10log(Q/4πr² + 4/R)' },
+  { a: 'dist',    b: 'power',    label: 'Lw from Lp' },
+  { a: 'room',    b: 'power',    label: 'R, ᾱ, K₂' },
+  { a: 'waves',   b: 'dist',     label: 'c = f·λ' },
+  { a: 'waves',   b: 'duct',     label: 'cut-on, plane wave' },
+  { a: 'waves',   b: 'tl',       label: 'mass law, f_c' },
+  { a: 'waves',   b: 'muffler',  label: 'λ, area change' },
+  { a: 'tl',      b: 'muffler',  label: 'transmission loss' },
+  { a: 'leq',     b: 'dose',     label: 'L_Aeq, dose %' },
+  { a: 'leq',     b: 'stats',    label: 'SEL = Leq + 10logT' },
+  { a: 'leq',     b: 'community',label: 'L_dn' },
+];
+
+const mapState = { started: false, raf: 0, alpha: 1, drag: null, active: null };
+
+// Lazily build & start the map once its container is visible.
+function startMap() {
+  if (!mapState.started) buildMap();
+  mapState.alpha = Math.max(mapState.alpha, 0.6);   // reheat on (re)entry
+  if (!mapState.raf) mapTick();
+}
+
+function buildMap() {
+  mapState.started = true;
+  const svg = $('map-svg');
+  const gEdges = $('map-edges'), gNodes = $('map-nodes');
+  const W = 1000, H = 620, cx = W / 2, cy = H / 2;
+
+  const byId = {};
+  // Seed positions on a circle, ordered by group so it converges tidily.
+  MAP_NODES.forEach((n, i) => {
+    const ang = (i / MAP_NODES.length) * 2 * Math.PI;
+    n.x = cx + 260 * Math.cos(ang);
+    n.y = cy + 170 * Math.sin(ang);
+    n.vx = 0; n.vy = 0; n.fx = null; n.fy = null;
+    n.nbrs = new Set();
+    byId[n.id] = n;
+  });
+
+  // Resolve edges to node objects + build adjacency.
+  const edges = MAP_EDGES.map(e => {
+    const A = byId[e.a], B = byId[e.b];
+    A.nbrs.add(B.id); B.nbrs.add(A.id);
+    return { A, B, label: e.label };
+  });
+  mapState.nodes = MAP_NODES; mapState.edges = edges; mapState.byId = byId;
+
+  // --- Build SVG: edges (line + hover label) then nodes (circle + text). ---
+  edges.forEach(e => {
+    const ln = document.createElementNS(SVGNS, 'line');
+    ln.setAttribute('class', 'map-edge');
+    gEdges.appendChild(ln);
+    const lab = document.createElementNS(SVGNS, 'text');
+    lab.setAttribute('class', 'map-elabel');
+    lab.setAttribute('text-anchor', 'middle');
+    lab.textContent = e.label;
+    gEdges.appendChild(lab);
+    e.ln = ln; e.lab = lab;
+  });
+
+  MAP_NODES.forEach(n => {
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('class', 'map-node');
+    g.dataset.id = n.id;
+    const c = document.createElementNS(SVGNS, 'circle');
+    c.setAttribute('r', 21);
+    c.setAttribute('fill', MAP_GROUPS[n.group].color);
+    const t = document.createElementNS(SVGNS, 'text');
+    t.setAttribute('class', 'map-nlabel');
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('y', 38);
+    t.textContent = n.label;
+    g.appendChild(c); g.appendChild(t);
+    gNodes.appendChild(g);
+    n.g = g; n.circle = c;
+    attachNodeHandlers(n);
+  });
+
+  buildMapLegend();
+  positionMap();
+}
+
+// Convert a pointer event to SVG/viewBox coordinates.
+function mapPoint(evt) {
+  const svg = $('map-svg');
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+function attachNodeHandlers(n) {
+  const g = n.g;
+  // Pointer down → begin a potential drag (distinguished from click on up).
+  g.addEventListener('pointerdown', evt => {
+    evt.preventDefault();
+    const p = mapPoint(evt);
+    mapState.drag = { n, moved: false, ox: p.x - n.x, oy: p.y - n.y };
+    n.fx = n.x; n.fy = n.y;
+    g.setPointerCapture(evt.pointerId);
+    setActive(n);
+  });
+  g.addEventListener('pointermove', evt => {
+    const d = mapState.drag;
+    if (!d || d.n !== n) return;
+    const p = mapPoint(evt);
+    n.fx = p.x - d.ox; n.fy = p.y - d.oy;
+    n.x = n.fx; n.y = n.fy;
+    d.moved = d.moved || Math.hypot(p.x - (n.fx + d.ox), p.y - (n.fy + d.oy)) > 0;
+    mapState.alpha = Math.max(mapState.alpha, 0.5);
+    if (!mapState.raf) mapTick();
+  });
+  const end = evt => {
+    const d = mapState.drag;
+    if (!d || d.n !== n) return;
+    n.fx = null; n.fy = null;
+    mapState.drag = null;
+    // A press that barely moved is a click → open that calculator.
+    if (!d.moved) selectTab(n.id);
+  };
+  g.addEventListener('pointerup', end);
+  g.addEventListener('pointercancel', end);
+  // Hover highlights connections without navigating.
+  g.addEventListener('pointerenter', () => { if (!mapState.drag) setActive(n); });
+  g.addEventListener('pointerleave', () => { if (!mapState.drag) setActive(null); });
+}
+
+// Highlight a node, its neighbours and the linking edges; dim the rest.
+function setActive(n) {
+  mapState.active = n;
+  const id = n ? n.id : null;
+  mapState.nodes.forEach(m => {
+    const on = !id || m.id === id || (n && n.nbrs.has(m.id));
+    m.g.classList.toggle('dim', !!id && !on);
+    m.g.classList.toggle('hot', id && m.id === id);
+  });
+  mapState.edges.forEach(e => {
+    const on = id && (e.A.id === id || e.B.id === id);
+    e.ln.classList.toggle('hot', !!on);
+    e.ln.classList.toggle('dim', !!id && !on);
+    e.lab.classList.toggle('show', !!on);
+  });
+  const tip = $('map-tip');
+  if (tip) {
+    if (n) { tip.innerHTML = `<b>${n.label}</b> — ${n.f}<span class="map-tip-go">click to open ›</span>`; tip.classList.add('show'); }
+    else tip.classList.remove('show');
+  }
+}
+
+// Push current node coordinates into the SVG elements.
+function positionMap() {
+  mapState.edges.forEach(e => {
+    e.ln.setAttribute('x1', e.A.x); e.ln.setAttribute('y1', e.A.y);
+    e.ln.setAttribute('x2', e.B.x); e.ln.setAttribute('y2', e.B.y);
+    e.lab.setAttribute('x', (e.A.x + e.B.x) / 2);
+    e.lab.setAttribute('y', (e.A.y + e.B.y) / 2 - 4);
+  });
+  mapState.nodes.forEach(n => n.g.setAttribute('transform', `translate(${n.x},${n.y})`));
+}
+
+// One step of the force simulation: repulsion + edge springs + gravity.
+function mapStep() {
+  const nodes = mapState.nodes, edges = mapState.edges;
+  const W = 1000, H = 620, cx = W / 2, cy = H / 2;
+  const REP = 170000, SPRING = 0.02, L0 = 150, GRAV = 0.04, DAMP = 0.85;
+  const a = mapState.alpha;
+
+  for (let i = 0; i < nodes.length; i++) {
+    const A = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++) {
+      const B = nodes[j];
+      let dx = A.x - B.x, dy = A.y - B.y;
+      let d2 = dx * dx + dy * dy; if (d2 < 1) { d2 = 1; dx = Math.random() - 0.5; dy = Math.random() - 0.5; }
+      const f = REP / d2 * a;
+      const d = Math.sqrt(d2), ux = dx / d, uy = dy / d;
+      A.vx += ux * f; A.vy += uy * f;
+      B.vx -= ux * f; B.vy -= uy * f;
+    }
+  }
+  edges.forEach(e => {
+    const dx = e.B.x - e.A.x, dy = e.B.y - e.A.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const f = (d - L0) * SPRING * a;
+    const ux = dx / d, uy = dy / d;
+    e.A.vx += ux * f; e.A.vy += uy * f;
+    e.B.vx -= ux * f; e.B.vy -= uy * f;
+  });
+  nodes.forEach(n => {
+    n.vx += (cx - n.x) * GRAV * a;
+    n.vy += (cy - n.y) * GRAV * a;
+    if (n.fx != null) { n.x = n.fx; n.y = n.fy; n.vx = n.vy = 0; return; }
+    n.vx *= DAMP; n.vy *= DAMP;
+    n.x += n.vx; n.y += n.vy;
+    n.x = Math.max(60, Math.min(W - 60, n.x));
+    n.y = Math.max(34, Math.min(H - 44, n.y));
+  });
+  mapState.alpha *= 0.985;
+  if (mapState.alpha < 0.02) mapState.alpha = 0.02;
+}
+
+function mapTick() {
+  // Pause the loop entirely while the map tab is hidden (saves CPU).
+  const sec = document.querySelector('.tab[data-tab="map"]');
+  if (!sec || !sec.classList.contains('active')) { mapState.raf = 0; return; }
+  for (let k = 0; k < 2; k++) mapStep();   // a couple of steps per frame settles faster
+  positionMap();
+  mapState.raf = requestAnimationFrame(mapTick);
+}
+
+function buildMapLegend() {
+  const el = $('map-legend');
+  if (!el) return;
+  el.innerHTML = Object.values(MAP_GROUPS).map(g =>
+    `<span class="map-leg"><i style="background:${g.color}"></i>${g.label}</span>`).join('');
 }
 
 /* ---------------- Combine ---------------- */

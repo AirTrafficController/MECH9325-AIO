@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MECH9325 — Acoustics &amp; Noise Control Calculator</title>
-<link rel="stylesheet" href="styles.css?v=24">
+<link rel="stylesheet" href="styles.css?v=25">
 </head>
 <body>
 <header>
@@ -24,6 +24,23 @@
 <nav id="tabs" class="wrap"></nav>
 
 <main class="wrap">
+
+<!-- ============================ FORMULA MAP ============================ -->
+<section class="tab" data-tab="map">
+  <h2>Formula Map — how the calculators connect</h2>
+  <p class="desc">An Obsidian-style map of the relationships across the toolkit. Each dot is a calculator;
+     each line is a shared formula or quantity. <b>Hover</b> a dot to highlight what it links to and see the
+     connecting formula, <b>drag</b> to rearrange, and <b>click</b> to jump straight to that calculator.</p>
+  <div id="map-legend" class="map-legend"></div>
+  <div id="map-wrap" class="map-wrap">
+    <svg id="map-svg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" role="img"
+         aria-label="Network graph of related acoustics calculators">
+      <g id="map-edges"></g>
+      <g id="map-nodes"></g>
+    </svg>
+    <div id="map-tip" class="map-tip"></div>
+  </div>
+</section>
 
 <!-- ============================ LEVELS ============================ -->
 <section class="tab" data-tab="levels">
@@ -942,7 +959,7 @@
   <p>MECH9325 Acoustics &amp; Noise Control · static client-side calculator · no data leaves your browser.</p>
 </footer>
 
-<script src="data.js?v=31"></script>
-<script src="app.js?v=31"></script>
+<script src="data.js?v=32"></script>
+<script src="app.js?v=32"></script>
 </body>
 </html>

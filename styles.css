@@ -111,3 +111,36 @@ details.bulk summary{cursor:pointer;color:var(--muted);font-size:.85rem;user-sel
 details.bulk summary:hover{color:var(--ink)}
 details.bulk textarea{margin-top:8px}
 details.bulk button{margin-top:8px}
+
+/* ---------------- Formula Map (relationship graph) ---------------- */
+.map-legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 12px}
+.map-leg{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:.84rem}
+.map-leg i{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}
+.map-wrap{position:relative;background:#0b1420;border:1px solid var(--line);border-radius:14px;
+  overflow:hidden}
+#map-svg{display:block;width:100%;height:auto;touch-action:none;
+  background:radial-gradient(circle at 50% 40%,#10202f,#0b1420 70%)}
+
+.map-edge{stroke:var(--line);stroke-width:1.4;transition:stroke .15s,stroke-width .15s,opacity .15s}
+.map-edge.hot{stroke:var(--accent2);stroke-width:2.4}
+.map-edge.dim{opacity:.18}
+.map-elabel{fill:var(--accent2);font-size:12px;font-family:ui-monospace,monospace;
+  opacity:0;pointer-events:none;paint-order:stroke;stroke:#0b1420;stroke-width:4px;
+  stroke-linejoin:round;transition:opacity .15s}
+.map-elabel.show{opacity:1}
+
+.map-node{cursor:pointer;transition:opacity .15s}
+.map-node circle{stroke:#0b1420;stroke-width:2.5;transition:r .12s,stroke .12s,filter .12s}
+.map-node:hover circle,.map-node.hot circle{stroke:#fff;filter:brightness(1.12)}
+.map-node.hot circle{r:25}
+.map-node.dim{opacity:.32}
+.map-nlabel{fill:var(--ink);font-size:13px;font-weight:600;pointer-events:none;
+  paint-order:stroke;stroke:#0b1420;stroke-width:3.5px;stroke-linejoin:round}
+
+.map-tip{position:absolute;left:12px;right:12px;bottom:12px;padding:10px 14px;border-radius:10px;
+  background:rgba(12,22,34,.94);border:1px solid var(--line);color:var(--ink);font-size:.88rem;
+  pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .15s,transform .15s}
+.map-tip.show{opacity:1;transform:none}
+.map-tip b{color:var(--accent2)}
+.map-tip-go{color:var(--muted);font-size:.8rem;margin-left:10px;white-space:nowrap}
+@media(max-width:640px){.map-nlabel{font-size:15px}.map-elabel{font-size:14px}}
