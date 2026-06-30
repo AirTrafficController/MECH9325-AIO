@@ -91,7 +91,7 @@ const TABS = [
 // Search keywords/tags per tab (lowercase). Matched against the typed query.
 const TAB_TAGS = {
   map: 'map mapping graph network diagram overview connections relationships related links concept formula visual navigation obsidian explore mind map web',
-  levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts psd power spectral density pa2/hz pa^2/hz integrate area trapezoid band linear flat mean square spectrum frequency limits',
+  levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts psd power spectral density pa2/hz pa^2/hz integrate area trapezoid band linear flat mean square spectrum frequency limits radiated acoustic power point source 4pir2 directivity q sphere hemisphere siren w from intensity',
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent max maximum machines permitted limit how many under night allowed',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
@@ -1085,6 +1085,26 @@ function doLI() {
   const LI = 10 * lg(I / I_REF);
   steps.push(`L_I = 10·log₁₀(I / I_ref) = 10·log₁₀(${sci(I)} / 10⁻¹²) = <b>${fmt(LI, 2)} dB</b>`);
   show('li-out', `I = <b>${I.toPrecision(4)} W/m²</b> · L<sub>I</sub> = <b>${fmt(LI, 2)} dB</b>` + work(steps));
+}
+function doRadPower() {
+  let I, steps = [];
+  if (!blank('rp-P')) {
+    const P = Number($('rp-P').value), p = P / Math.SQRT2; I = p * p / RHO_C;
+    steps.push(`p_rms = P/√2 = ${fmt(P)}/1.4142 = ${p.toPrecision(4)} Pa`);
+    steps.push(`I = p_rms²/ρc = ${p.toPrecision(4)}²/${RHO_C} = ${sci(I)} W/m²`);
+  } else if (!blank('rp-I')) {
+    I = Number($('rp-I').value);
+  } else return show('rp-out', 'Enter an intensity or a peak pressure.', 'err');
+  if (!(I > 0)) return show('rp-out', 'Intensity must be > 0.', 'err');
+  const r = Number($('rp-r').value), Q = Number($('rp-Q').value);
+  if (!(r > 0)) return show('rp-out', 'Distance r must be > 0.', 'err');
+  const S = 4 * Math.PI * r * r / Q, W = I * S, Lw = 10 * lg(W / W_REF);
+  const qName = { 1: 'sphere, S = 4πr²', 2: 'hemisphere, S = 2πr²', 4: 'S = πr²', 8: 'S = ½πr²' }[Q];
+  steps.push(`Q = ${Q} (${qName})`);
+  steps.push(`S = 4πr²/Q = 4π·${fmt(r)}²/${Q} = ${fmt(S, 4)} m²`);
+  steps.push(`W = I·S = ${sci(I)}·${fmt(S, 4)} = <b>${W.toPrecision(4)} W</b>`);
+  steps.push(`L_w = 10·log₁₀(W/10⁻¹²) = <b>${fmt(Lw, 2)} dB</b>`);
+  show('rp-out', `W = <b>${W.toPrecision(4)} W</b> · L<sub>w</sub> = <b>${fmt(Lw, 2)} dB</b>` + work(steps));
 }
 function doRMS() {
   const P = Number($('rms-P').value), p = P / Math.SQRT2;

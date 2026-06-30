@@ -77,6 +77,28 @@
     </div>
 
     <div class="card">
+      <h3>Radiated power from intensity / pressure (point source)</h3>
+      <p class="hint">Total acoustic power of a point source from a measured intensity — or a peak/RMS
+         pressure — at distance r. Pick the source directivity Q.</p>
+      <label>Intensity I (W/m²) <input id="rp-I" type="number" step="any" placeholder="e.g. 0.753"></label>
+      <label>or peak pressure amplitude P (Pa) — uses p<sub>rms</sub>=P/√2, I=p²/ρc
+        <input id="rp-P" type="number" step="any" placeholder="e.g. 25"></label>
+      <div class="row">
+        <label>Distance r (m) <input id="rp-r" type="number" value="2" step="any"></label>
+        <label>Directivity Q
+          <select id="rp-Q">
+            <option value="1">1 — free field (sphere, S=4πr²)</option>
+            <option value="2">2 — on the ground (hemisphere, S=2πr²)</option>
+            <option value="4">4 — two reflecting surfaces (S=πr²)</option>
+            <option value="8">8 — corner / three surfaces (S=½πr²)</option>
+          </select></label>
+      </div>
+      <button onclick="doRadPower()">Compute W &amp; L_w</button>
+      <div id="rp-out" class="result"></div>
+      <p class="note">W = I·S = I·(4πr²/Q) &nbsp;·&nbsp; L<sub>w</sub> = 10·log<sub>10</sub>(W/10⁻¹²)</p>
+    </div>
+
+    <div class="card">
       <h3>Peak ↔ RMS &amp; combining tones</h3>
       <label>Peak pressure amplitude P (Pa) → RMS <input id="rms-P" type="number" value="2" step="any"></label>
       <button onclick="doRMS()">p_rms = P/√2</button>
