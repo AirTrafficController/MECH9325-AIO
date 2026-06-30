@@ -25,7 +25,7 @@ selector on that card. The reference period T also accepts a unit (e.g. `8 h`, `
 
 | Tab | Calculations | Source |
 |-----|--------------|--------|
-| **Levels** | SPL ↔ pressure · Sound Power Level · Intensity Level · I=p²/ρc · peak↔RMS · combine tone RMS | Unit 1–2 |
+| **Levels** | SPL ↔ pressure · Sound Power Level · Intensity Level · I=p²/ρc · **radiated power W=I·4πr²/Q (from intensity or peak pressure) → L<sub>w</sub>** · peak↔RMS · combine tone RMS | Unit 1–2 |
 | **Combine** | Add incoherent levels · N identical sources · increase when sources are added · error from using only the larger of two RMS signals | Quiz 1 |
 | **Subtract** | Remove a source / background · level of one of N identical sources | Quiz 1 |
 | **Waves** | c=f·λ, T, ω, k · speed of sound from temperature · particle velocity/displacement · octave band edges · pipe natural frequencies | Unit 1, 6 |
