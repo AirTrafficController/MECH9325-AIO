@@ -66,27 +66,26 @@ const PANEL_EXAMPLE = {
   },
 };
 
-// PSIL → max distance (m) for "just-reliable" communication at each voice effort.
-// Approximate Webster speech-communication data used in the course.
-const VOICE_TABLE = [
-  // [PSIL_low, PSIL_high, effort]
-  [0,   45, 'Normal voice'],
-  [45,  52, 'Raised voice'],
-  [52,  59, 'Very loud voice'],
-  [59,  66, 'Shouting'],
-  [66, 999, 'Communication impossible'],
+// Table 5.2 (Unit 5) — A-weighted voice levels VLA (dB(A) at 1 m) for each voice
+// effort. The largest, peak shouting, is the loudest a human voice can manage;
+// a required VLA above it means face-to-face communication is not possible.
+const VOICE_LEVELS = [
+  // [VLA dB(A) at 1 m, voice effort]
+  [57, 'Normal'],
+  [65, 'Raised'],
+  [74, 'Very loud'],
+  [82, 'Shouting'],
+  [88, 'Peak shouting (maximum effort)'],
 ];
+const VOICE_MAX = 88; // dB(A) at 1 m — peak shouting
 
-// Voice effort as a function of PSIL and distance (Webster chart, course version).
-// Returns a descriptive band. Distance shifts the thresholds ~ -10 dB per doubling.
-function voiceEffort(psil, dist) {
-  // Reference thresholds are for ~1 m; adjust by distance.
-  const adj = psil + 20 * Math.log10(Math.max(dist, 0.05) / 1.0); // effective PSIL at 1 m basis
-  if (adj < 45) return 'Normal to Raised';
-  if (adj < 55) return 'Raised to Very Loud';
-  if (adj < 65) return 'Very Loud to Shouting';
-  if (adj < 75) return 'Shouting';
-  return 'Communication impossible';
+// Given a required A-weighted voice level VLA (dB(A) at 1 m), return the voice
+// effort a talker must at least use. Returns null when VLA exceeds peak
+// shouting, i.e. communication is not possible.
+function voiceEffortForVL(vla) {
+  if (vla > VOICE_MAX) return null;
+  for (const [lvl, name] of VOICE_LEVELS) if (vla <= lvl) return name;
+  return VOICE_LEVELS[VOICE_LEVELS.length - 1][1];
 }
 
 // ---- Physical constants & reference values (course defaults) ----

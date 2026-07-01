@@ -104,7 +104,7 @@ const TAB_TAGS = {
   leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq integral integrate function ramp formula rising noise event percentile ln l10 l90 level exceeded percent five minute',
   dose: 'noise dose ohs oh&s occupational exposure limit 85 db permissible time exchange rate hearing shift worker percent percentage criterion',
   loud: 'loudness phon phons sone sones equal loudness contour conversion subjective hearing',
-  speech: 'speech psil sil interference voice effort communication distance talker listener 500 1000 2000 articulation',
+  speech: 'speech psil sil interference voice effort communication distance talker listener 500 1000 2000 articulation a-weighted voice level vla required possible face to face shouting raised normal peak eq 5.6 table 5.2',
   community: 'community noise day night ldn lden penalty environmental planning residential',
   stats: 'statistical levels percentile l1 l10 l90 l99 background sel sound exposure level single event ordering max min sort',
   tl: 'insulation transmission loss tl mass law partition wall surface mass impedance ratio interface reflection transmission coefficient alpha t alpha r panel resonance critical frequency sound reduction',
@@ -989,15 +989,28 @@ function doPSIL() {
   const b = $('psil-1000').value === '' ? a : Number($('psil-1000').value);
   const c = $('psil-2000').value === '' ? a : Number($('psil-2000').value);
   const dist = Number($('psil-dist').value);
+  if (!(dist > 0)) return show('psil-out', 'Distance must be > 0.', 'err');
   const psil = (a + b + c) / 3;
-  const effort = voiceEffort(psil, dist);
+  // Required A-weighted voice level for satisfactory face-to-face communication
+  // (Unit 5, Eq 5.6): VLA ≥ (4/3)·(SIL + 20·log₁₀ r) − 36.
+  const dTerm = 20 * lg(dist);
+  const vla = (4 / 3) * (psil + dTerm) - 36;
+  const effort = voiceEffortForVL(vla);
+  const possible = effort !== null;
+  const verdict = possible
+    ? `needs at least a <b>${effort.replace(/ \(.*/, '')}</b> voice`
+    : `<b>communication not possible</b> (exceeds peak shouting, ${VOICE_MAX} dB(A) at 1 m)`;
   show('psil-out',
-    `PSIL = <b>${fmt(psil, 2)} dB</b> · at ${fmt(dist)} m voice effort: <b>${effort}</b>` +
+    `PSIL = <b>${fmt(psil, 2)} dB</b> · required VL<sub>A</sub> at ${fmt(dist)} m = <b>${fmt(vla, 2)} dB(A)</b><br>` +
+    `Communication ${possible ? '<b>possible</b>' : '<b>NOT possible</b>'} — ${verdict}` +
     work([
-      `PSIL = (L₅₀₀ + L₁₀₀₀ + L₂₀₀₀) / 3`,
-      `= (${fmt(a)} + ${fmt(b)} + ${fmt(c)}) / 3`,
-      `= ${fmt(a + b + c)} / 3`,
-      `= <b>${fmt(psil, 2)} dB</b>`,
+      `PSIL = (L₅₀₀ + L₁₀₀₀ + L₂₀₀₀) / 3 = (${fmt(a)} + ${fmt(b)} + ${fmt(c)}) / 3 = <b>${fmt(psil, 2)} dB</b>`,
+      `VL_A ≥ (4/3)·(SIL + 20·log₁₀ r) − 36            (Eq 5.6)`,
+      `= (4/3)·(${fmt(psil, 2)} + 20·log₁₀(${fmt(dist)})) − 36`,
+      `= (4/3)·(${fmt(psil, 2)} + ${fmt(dTerm, 2)}) − 36`,
+      `= <b>${fmt(vla, 2)} dB(A)</b>` +
+        (possible ? ` → within human range → use a ${effort} voice`
+                  : ` → above ${VOICE_MAX} dB(A) (peak shouting) → not achievable`),
     ]));
 }
 

@@ -798,16 +798,17 @@
      500, 1000 and 2000 Hz: <span class="f">PSIL = (L<sub>500</sub> + L<sub>1000</sub> + L<sub>2000</sub>)/3</span>.</p>
 
   <div class="card">
-    <h3>Compute PSIL &amp; voice effort</h3>
+    <h3>PSIL, required voice level &amp; is communication possible?</h3>
     <div class="row">
       <label>L at 500 Hz (dB) <input id="psil-500" type="number" value="76" step="any"></label>
       <label>L at 1000 Hz (dB) <input id="psil-1000" type="number" step="any" placeholder="(blank = same)"></label>
       <label>L at 2000 Hz (dB) <input id="psil-2000" type="number" step="any" placeholder="(blank = same)"></label>
     </div>
-    <label>Talker–listener distance (m) <input id="psil-dist" type="number" value="1.5" step="any"></label>
+    <label>Talker–listener distance r (m) <input id="psil-dist" type="number" value="1" step="any"></label>
     <button onclick="doPSIL()">Compute</button>
     <div id="psil-out" class="result"></div>
-    <p class="note">Voice-effort guidance from PSIL vs distance (just-reliable communication).</p>
+    <p class="note">VL<sub>A</sub> ≥ (4/3)·(SIL + 20·log<sub>10</sub> r) − 36 &nbsp;·&nbsp;
+       communication needs a voice ≤ 88 dB(A) at 1 m (peak shouting).</p>
   </div>
 </section>
 
