@@ -448,6 +448,37 @@
     <p class="note">A₁ = 0.161·V/T₆₀ · A<sub>abs</sub> = S<sub>abs</sub>·α · A₂ = A₁ ∓ A<sub>abs</sub> ·
        ΔL<sub>p</sub> = 10·log<sub>10</sub>(A₁/A₂) · overall = Σ<sub>bands</sub> of (L<sub>p</sub> + W).</p>
   </div>
+
+  <div class="card">
+    <h3>Plant room — reverberant field &amp; surface treatment (all-in-one)</h3>
+    <p class="hint">Combine several machine sound powers per octave band, get the reverberant-field SPL
+       at the far end of the room, then see the effect of coating one surface (e.g. the ceiling)
+       with absorbing material — all in one pass. For each band enter the individual motor
+       L<sub>w</sub> values (space- or comma-separated), the bare-surface absorption coefficient α,
+       and — to model a treatment — the coated-surface α. Set the coated area to model the treatment;
+       leave it blank for the untreated room. Leave a band blank to ignore it.</p>
+    <div class="row">
+      <label>Room length L (m) <input id="pl-L" type="number" step="any" placeholder="11.6"></label>
+      <label>Room width W (m) <input id="pl-W" type="number" step="any" placeholder="5"></label>
+      <label>Room height H (m) <input id="pl-H" type="number" step="any" placeholder="5"></label>
+    </div>
+    <div class="row">
+      <label>Coated surface area S<sub>coat</sub> (m²) <input id="pl-Scoat" type="number" step="any" placeholder="(blank = untreated)"></label>
+      <label>Overall weighting
+        <select id="pl-net">
+          <option value="A" selected>A → dB(A)</option>
+          <option value="B">B → dB(B)</option>
+          <option value="C">C → dB(C)</option>
+          <option value="Z">None → dB</option>
+        </select></label>
+      <button onclick="prefillPlant()">Load Q7 example</button>
+    </div>
+    <div id="pl-table-wrap"></div>
+    <button onclick="doPlantRoom()">Compute a–g</button>
+    <div id="pl-out" class="result"></div>
+    <p class="note">L<sub>w,band</sub> = 10·log(Σ10^(L<sub>wi</sub>/10)) · reverberant L<sub>p</sub> = L<sub>w</sub> + 10·log(4/R) ·
+       R = S·ᾱ/(1−ᾱ) · coated ᾱ = [S<sub>coat</sub>α<sub>coat</sub> + (S−S<sub>coat</sub>)α<sub>base</sub>]/S.</p>
+  </div>
 </section>
 
 <!-- ============================ SOUND POWER ============================ -->
