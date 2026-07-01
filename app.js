@@ -96,7 +96,7 @@ const TAB_TAGS = {
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate sound power level from spl reverse lw from lp anechoic chamber omni-directional omnidirectional',
-  room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment',
+  room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment plant room machinery motors combine sound power watts reverberant field spl ceiling coating surface treatment dba reduction before after',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
@@ -1383,6 +1383,93 @@ function doReverbChange() {
     ]));
 }
 
+/* ---- Plant room: combine machine powers → reverberant SPL → surface treatment ---- */
+const PLANT_BANDS = [63, 125, 250, 500, 1000, 2000, 4000, 8000];
+function buildPlantTable() {
+  let h = '<table class="bands"><tr><th>Freq (Hz)</th><th>Motor L<sub>w</sub> list (dB)</th>' +
+    '<th>α base</th><th>α coated</th></tr>';
+  PLANT_BANDS.forEach(f => {
+    const fl = f >= 1000 ? f / 1000 + 'k' : f;
+    h += `<tr><td>${fl}</td>
+      <td><input type="text" class="plLw" data-f="${f}" placeholder="—" style="min-width:120px"></td>
+      <td><input type="number" step="any" class="plAb" data-f="${f}" placeholder="—"></td>
+      <td><input type="number" step="any" class="plAc" data-f="${f}" placeholder="—"></td></tr>`;
+  });
+  h += '</table>';
+  $('pl-table-wrap').innerHTML = h;
+}
+function prefillPlant() {
+  buildPlantTable();
+  $('pl-L').value = PLANT_EXAMPLE.L; $('pl-W').value = PLANT_EXAMPLE.W; $('pl-H').value = PLANT_EXAMPLE.H;
+  $('pl-Scoat').value = PLANT_EXAMPLE.Scoat; $('pl-net').value = PLANT_EXAMPLE.net;
+  const ex = PLANT_EXAMPLE.bands;
+  document.querySelectorAll('.plLw').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.lw; });
+  document.querySelectorAll('.plAb').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.ab; });
+  document.querySelectorAll('.plAc').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.ac; });
+}
+function doPlantRoom() {
+  const L = Number($('pl-L').value), W = Number($('pl-W').value), H = Number($('pl-H').value);
+  if (!(L > 0 && W > 0 && H > 0)) return show('pl-out', 'Room L, W and H must be > 0.', 'err');
+  const V = L * W * H, S = 2 * (L * W + L * H + W * H);
+  const Scoat = $('pl-Scoat').value === '' ? 0 : Number($('pl-Scoat').value);
+  if (Scoat < 0 || Scoat > S) return show('pl-out', `Coated area must be between 0 and the total surface area (${fmt(S, 1)} m²).`, 'err');
+  const net = $('pl-net').value, tag = net === 'Z' ? 'dB' : `dB(${net})`;
+
+  const lwIn = {}, abIn = {}, acIn = {};
+  document.querySelectorAll('.plLw').forEach(i => { if (i.value.trim() !== '') lwIn[+i.dataset.f] = i.value; });
+  document.querySelectorAll('.plAb').forEach(i => { if (i.value !== '') abIn[+i.dataset.f] = Number(i.value); });
+  document.querySelectorAll('.plAc').forEach(i => { if (i.value !== '') acIn[+i.dataset.f] = Number(i.value); });
+  const freqs = Object.keys(lwIn).map(Number).sort((a, b) => a - b);
+  if (!freqs.length) return show('pl-out', 'Enter at least one band with motor L_w values.', 'err');
+
+  const rows = []; let anyCoat = false;
+  for (const f of freqs) {
+    const list = lwIn[f].split(/[\s,]+/).map(Number).filter(x => !isNaN(x));
+    if (!list.length) return show('pl-out', `Band ${f} Hz: enter one or more L_w values.`, 'err');
+    const ab = abIn[f];
+    if (!(ab > 0 && ab < 1)) return show('pl-out', `Band ${f} Hz: α base must be between 0 and 1.`, 'err');
+    const Lw = dBsum(list), Wt = W_REF * 10 ** (Lw / 10);
+    const R1 = S * ab / (1 - ab), Lp1 = Lw + 10 * lg(4 / R1);
+    let Lp2 = Lp1, coated = false;
+    if (Scoat > 0 && acIn[f] != null) {
+      const ac = acIn[f];
+      if (!(ac > 0 && ac < 1)) return show('pl-out', `Band ${f} Hz: α coated must be between 0 and 1.`, 'err');
+      const A2 = Scoat * ac + (S - Scoat) * ab, abar2 = A2 / S, R2 = A2 / (1 - abar2);
+      Lp2 = Lw + 10 * lg(4 / R2); coated = true; anyCoat = true;
+    }
+    rows.push({ f, Lw, Wt, Lp1, Lp2, wo: weightOffset(f, net), coated });
+  }
+
+  const overallLw = dBsum(rows.map(r => r.Lw));
+  const before = dBsum(rows.map(r => r.Lp1 + r.wo));
+  const after = dBsum(rows.map(r => r.Lp2 + r.wo));
+  const reduction = before - after;
+
+  let t = `<table class="bands"><tr><th>Freq</th><th>L<sub>w</sub> (dB)</th><th>W (W)</th>` +
+    `<th>L<sub>p</sub> rev${anyCoat ? ' (before)' : ''}</th>${anyCoat ? '<th>L<sub>p</sub> rev (after)</th>' : ''}</tr>`;
+  rows.forEach(r => {
+    t += `<tr><td>${r.f >= 1000 ? r.f / 1000 + 'k' : r.f}</td><td>${fmt(r.Lw, 2)}</td>
+      <td>${r.Wt.toPrecision(4)}</td><td>${fmt(r.Lp1, 2)}</td>` +
+      (anyCoat ? `<td><b>${fmt(r.Lp2, 2)}</b></td>` : '') + `</tr>`;
+  });
+  t += `</table>`;
+
+  let summary = `<div class="big">Overall L<sub>w</sub> = <b>${fmt(overallLw, 2)} dB</b></div>
+     <div class="big">Total ${anyCoat ? 'before treatment' : ''} = <b>${fmt(before, 1)} ${tag}</b></div>`;
+  if (anyCoat) summary += `<div class="big">Total after treatment = <b>${fmt(after, 1)} ${tag}</b></div>
+     <div class="big">Reduction = <b>${fmt(reduction, 1)} ${tag}</b></div>`;
+
+  show('pl-out', t + summary + work([
+    `Per band: L_w = 10·log₁₀(Σ 10^(L_wi/10)) · W = 10⁻¹²·10^(L_w/10)`,
+    `Room: V = ${fmt(V, 1)} m³ · S_total = 2(LW+LH+WH) = ${fmt(S, 1)} m²`,
+    `Reverberant field: L_p = L_w + 10·log₁₀(4/R) · R = S·ᾱ/(1−ᾱ)`,
+    anyCoat ? `Coated: ᾱ = [S_coat·α_coat + (S−S_coat)·α_base]/S · S_coat = ${fmt(Scoat, 1)} m²` : `(no coating — enter S_coat and α coated to model a treatment)`,
+    `Overall L_w = 10·log₁₀( Σ 10^(L_w,band/10) ) = <b>${fmt(overallLw, 2)} dB</b>`,
+    `Total = 10·log₁₀( Σ 10^((L_p + weighting)/10) ) = <b>${fmt(before, 1)} ${tag}</b>` +
+      (anyCoat ? ` → <b>${fmt(after, 1)} ${tag}</b> after, Δ = <b>${fmt(reduction, 1)} ${tag}</b>` : ''),
+  ]));
+}
+
 /* ---------------- Sound power measurement ---------------- */
 function doK1() {
   const st = Number($('k1-st').value), b = Number($('k1-b').value), dL = st - b;
@@ -1748,6 +1835,7 @@ window.addEventListener('DOMContentLoaded', () => {
   buildBandTable();
   buildPowerBandTable();
   buildReverbTable();
+  buildPlantTable();
   buildRefTable();
   initGrids();
 });

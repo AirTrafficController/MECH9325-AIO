@@ -66,6 +66,18 @@ const PANEL_EXAMPLE = {
   },
 };
 
+// Plant-room example (three motors, concrete room, ceiling coating). Each band
+// carries the individual motor L_w values, the bare (concrete) absorption
+// coefficient α, and the coating α applied to the ceiling.
+const PLANT_EXAMPLE = {
+  L: 11.6, W: 5.0, H: 5.0, Scoat: 58, net: 'A',
+  bands: {
+    500:  { lw: '94 89 82', ab: 0.02, ac: 0.38 },
+    1000: { lw: '89 88 75', ab: 0.04, ac: 0.71 },
+    2000: { lw: '84 80 76', ab: 0.05, ac: 0.89 },
+  },
+};
+
 // Table 5.2 (Unit 5) — A-weighted voice levels VLA (dB(A) at 1 m) for each voice
 // effort. The largest, peak shouting, is the loudest a human voice can manage;
 // a required VLA above it means face-to-face communication is not possible.
