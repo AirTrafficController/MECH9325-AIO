@@ -479,6 +479,35 @@
     <p class="note">L<sub>w,band</sub> = 10·log(Σ10^(L<sub>wi</sub>/10)) · reverberant L<sub>p</sub> = L<sub>w</sub> + 10·log(4/R) ·
        R = S·ᾱ/(1−ᾱ) · coated ᾱ = [S<sub>coat</sub>α<sub>coat</sub> + (S−S<sub>coat</sub>)α<sub>base</sub>]/S.</p>
   </div>
+
+  <div class="card">
+    <h3>Reverberation test room — furniture absorption &amp; reverberant ⟨p²⟩ (all-in-one)</h3>
+    <p class="hint">Works a full reverberation-room furniture-absorption problem. From the empty and
+       furnished reverberation times it finds the equivalent absorption area
+       <span class="f">A = 0.161·V/T₆₀</span> and average coefficient <span class="f">ᾱ = A/S</span>;
+       from the reference source's octave-band L<sub>w</sub> it gives the reverberant-field
+       <b>mean-square pressure</b> <span class="f">⟨p²⟩ = 4ρc·W/R</span> (in Pa², using the exact ρc),
+       then the A-weighted band and overall SPLs for both states and the reduction. Enter one row per
+       band; leave the furniture T₆₀ blank to evaluate the empty room only.</p>
+    <div class="row">
+      <label>Room volume V (m³) <input id="tr-V" type="number" step="any" placeholder="207"></label>
+      <label>Surface area S (m²) <input id="tr-S" type="number" step="any" placeholder="220"></label>
+      <label>ρc (rayls) <input id="tr-rc" type="number" step="any" value="415"></label>
+      <label>Overall weighting
+        <select id="tr-net">
+          <option value="A" selected>A → dB(A)</option>
+          <option value="B">B → dB(B)</option>
+          <option value="C">C → dB(C)</option>
+          <option value="Z">None → dB</option>
+        </select></label>
+      <button onclick="prefillTestRoom()">Load example</button>
+    </div>
+    <div id="tr-table-wrap"></div>
+    <button onclick="doTestRoom()">Compute a–l</button>
+    <div id="tr-out" class="result"></div>
+    <p class="note">A = 0.161·V/T₆₀ · ᾱ = A/S · R = A/(1−ᾱ) · W = 10⁻¹²·10^(L<sub>w</sub>/10) ·
+       ⟨p²⟩ = 4ρc·W/R · L<sub>p</sub> = 10·log(⟨p²⟩/p<sub>ref</sub>²).</p>
+  </div>
 </section>
 
 <!-- ============================ SOUND POWER ============================ -->

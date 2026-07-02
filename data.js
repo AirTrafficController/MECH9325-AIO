@@ -78,6 +78,18 @@ const PLANT_EXAMPLE = {
   },
 };
 
+// Reverberation-test-room example (upholstered furniture). Room V = 207 m³,
+// surface S = 220 m². Per band: empty & furnished T₆₀ (s) and the broadband
+// reference source sound power level L_w (dB re 10⁻¹² W).
+const TEST_ROOM_EXAMPLE = {
+  V: 207, S: 220, rc: 415, net: 'A',
+  bands: {
+    250:  { te: 8.2, tf: 6.5, lw: 81.4 },
+    500:  { te: 7.5, tf: 5.9, lw: 82.0 },
+    1000: { te: 6.4, tf: 4.8, lw: 88.2 },
+  },
+};
+
 // Table 5.2 (Unit 5) — A-weighted voice levels VLA (dB(A) at 1 m) for each voice
 // effort. The largest, peak shouting, is the loudest a human voice can manage;
 // a required VLA above it means face-to-face communication is not possible.

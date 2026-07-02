@@ -96,7 +96,7 @@ const TAB_TAGS = {
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate sound power level from spl reverse lw from lp anechoic chamber omni-directional omnidirectional',
-  room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment plant room machinery motors combine sound power watts reverberant field spl ceiling coating surface treatment dba reduction before after',
+  room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment plant room machinery motors combine sound power watts reverberant field spl ceiling coating surface treatment dba reduction before after reverberation test room upholstered furniture equivalent absorption area 0.161v/t60 mean square pressure pa2 reference source club empty furnished',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
@@ -1383,6 +1383,92 @@ function doReverbChange() {
     ]));
 }
 
+/* ---- Reverberation test room: T₆₀ → absorption, source W → reverberant ⟨p²⟩ ---- */
+function buildTestRoomTable() {
+  let h = '<table class="bands"><tr><th>Freq (Hz)</th><th>T₆₀ empty (s)</th>' +
+    '<th>T₆₀ furniture (s)</th><th>Source L<sub>w</sub> (dB)</th></tr>';
+  PLANT_BANDS.forEach(f => {
+    const fl = f >= 1000 ? f / 1000 + 'k' : f;
+    h += `<tr><td>${fl}</td>
+      <td><input type="number" step="any" class="trTe" data-f="${f}" placeholder="—"></td>
+      <td><input type="number" step="any" class="trTf" data-f="${f}" placeholder="—"></td>
+      <td><input type="number" step="any" class="trLw" data-f="${f}" placeholder="—"></td></tr>`;
+  });
+  h += '</table>';
+  $('tr-table-wrap').innerHTML = h;
+}
+function prefillTestRoom() {
+  buildTestRoomTable();
+  $('tr-V').value = TEST_ROOM_EXAMPLE.V; $('tr-S').value = TEST_ROOM_EXAMPLE.S;
+  $('tr-rc').value = TEST_ROOM_EXAMPLE.rc; $('tr-net').value = TEST_ROOM_EXAMPLE.net;
+  const ex = TEST_ROOM_EXAMPLE.bands;
+  document.querySelectorAll('.trTe').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.te; });
+  document.querySelectorAll('.trTf').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.tf; });
+  document.querySelectorAll('.trLw').forEach(i => { const b = ex[+i.dataset.f]; if (b) i.value = b.lw; });
+}
+function doTestRoom() {
+  const V = Number($('tr-V').value), S = Number($('tr-S').value), rc = Number($('tr-rc').value);
+  if (!(V > 0)) return show('tr-out', 'Room volume V must be > 0.', 'err');
+  if (!(S > 0)) return show('tr-out', 'Surface area S must be > 0.', 'err');
+  if (!(rc > 0)) return show('tr-out', 'ρc must be > 0.', 'err');
+  const net = $('tr-net').value, tag = net === 'Z' ? 'dB' : `dB(${net})`, pref2 = P_REF * P_REF;
+
+  const teIn = {}, tfIn = {}, lwIn = {};
+  document.querySelectorAll('.trTe').forEach(i => { if (i.value !== '') teIn[+i.dataset.f] = Number(i.value); });
+  document.querySelectorAll('.trTf').forEach(i => { if (i.value !== '') tfIn[+i.dataset.f] = Number(i.value); });
+  document.querySelectorAll('.trLw').forEach(i => { if (i.value !== '') lwIn[+i.dataset.f] = Number(i.value); });
+  const freqs = Object.keys(lwIn).map(Number).sort((a, b) => a - b);
+  if (!freqs.length) return show('tr-out', 'Enter at least one band with a source L_w.', 'err');
+
+  const rows = []; let anyFurn = false;
+  for (const f of freqs) {
+    if (teIn[f] === undefined || !(teIn[f] > 0)) return show('tr-out', `Band ${f} Hz: needs the empty-room T₆₀ (> 0).`, 'err');
+    const Ae = 0.161 * V / teIn[f], ae = Ae / S, Re = Ae / (1 - ae);
+    const W = W_REF * 10 ** (lwIn[f] / 10);
+    const p2e = 4 * rc * W / Re, Lpe = 10 * lg(p2e / pref2), dBAe = Lpe + weightOffset(f, net);
+    const row = { f, Ae, ae, W, p2e, dBAe, Af: null, af: null, p2f: null, dBAf: null };
+    if (tfIn[f] !== undefined && tfIn[f] > 0) {
+      const Af = 0.161 * V / tfIn[f], af = Af / S, Rf = Af / (1 - af);
+      const p2f = 4 * rc * W / Rf, Lpf = 10 * lg(p2f / pref2);
+      Object.assign(row, { Af, af, p2f, dBAf: Lpf + weightOffset(f, net) }); anyFurn = true;
+    }
+    rows.push(row);
+  }
+
+  const emptyOverall = dBsum(rows.map(r => r.dBAe));
+  const furnRows = rows.filter(r => r.dBAf != null);
+  const furnOverall = anyFurn ? dBsum(furnRows.map(r => r.dBAf)) : null;
+  const emptySameBands = anyFurn ? dBsum(furnRows.map(r => r.dBAe)) : null;
+  const reduction = anyFurn ? emptySameBands - furnOverall : null;
+
+  const cell = (v, d = 2) => v == null ? '—' : fmt(v, d);
+  let t = `<table class="bands"><tr><th>Freq</th><th>A empty</th>${anyFurn ? '<th>A furn</th>' : ''}` +
+    `<th>ᾱ empty</th>${anyFurn ? '<th>ᾱ furn</th>' : ''}<th>W (W)</th>` +
+    `<th>⟨p²⟩ empty (Pa²)</th>${anyFurn ? '<th>⟨p²⟩ furn (Pa²)</th>' : ''}` +
+    `<th>${tag} empty</th>${anyFurn ? `<th>${tag} furn</th>` : ''}</tr>`;
+  rows.forEach(r => {
+    t += `<tr><td>${r.f >= 1000 ? r.f / 1000 + 'k' : r.f}</td><td>${fmt(r.Ae, 3)}</td>` +
+      (anyFurn ? `<td>${cell(r.Af, 3)}</td>` : '') +
+      `<td>${fmt(r.ae, 4)}</td>` + (anyFurn ? `<td>${cell(r.af, 4)}</td>` : '') +
+      `<td>${r.W.toPrecision(4)}</td><td>${fmt(r.p2e, 4)}</td>` +
+      (anyFurn ? `<td>${cell(r.p2f, 4)}</td>` : '') +
+      `<td>${fmt(r.dBAe, 2)}</td>` + (anyFurn ? `<td><b>${cell(r.dBAf)}</b></td>` : '') + `</tr>`;
+  });
+  t += `</table>`;
+
+  let summary = `<div class="big">Overall empty room = <b>${fmt(emptyOverall, 1)} ${tag}</b></div>`;
+  if (anyFurn) summary += `<div class="big">Overall with furniture = <b>${fmt(furnOverall, 1)} ${tag}</b></div>
+     <div class="big">Reduction = <b>${fmt(reduction, 1)} ${tag}</b></div>`;
+
+  show('tr-out', t + summary + work([
+    `Per band: A = 0.161·V/T₆₀ · ᾱ = A/S · R = A/(1−ᾱ)`,
+    `W = 10⁻¹²·10^(L_w/10) · ⟨p²⟩ = 4·ρc·W/R   (ρc = ${fmt(rc)} rayls)`,
+    `L_p = 10·log₁₀(⟨p²⟩ / p_ref²) · band ${tag} = L_p + weighting`,
+    `Overall ${tag} = 10·log₁₀( Σ 10^(band/10) )` +
+      (anyFurn ? ` → empty ${fmt(emptyOverall, 1)}, furniture ${fmt(furnOverall, 1)}, Δ = <b>${fmt(reduction, 1)} ${tag}</b>` : ''),
+  ]));
+}
+
 /* ---- Plant room: combine machine powers → reverberant SPL → surface treatment ---- */
 const PLANT_BANDS = [63, 125, 250, 500, 1000, 2000, 4000, 8000];
 function buildPlantTable() {
@@ -1836,6 +1922,7 @@ window.addEventListener('DOMContentLoaded', () => {
   buildPowerBandTable();
   buildReverbTable();
   buildPlantTable();
+  buildTestRoomTable();
   buildRefTable();
   initGrids();
 });
