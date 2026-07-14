@@ -254,23 +254,37 @@
     </div>
 
     <div class="card">
-      <h3>Speed of sound from temperature</h3>
-      <label>Temperature (°C) <input id="sos-T" type="number" value="20" step="any"></label>
+      <h3>Speed of sound ↔ temperature</h3>
+      <label>Temperature (°C) <input id="sos-T" type="number" value="20" step="any" placeholder="(blank to solve from c)"></label>
+      <label>Speed c (m/s) <input id="sos-c" type="number" step="any" placeholder="(blank to solve from T)"></label>
       <label>Gas constant R (J·kg⁻¹·K⁻¹, air=287) <input id="sos-R" type="number" value="287" step="any"></label>
       <label>γ (air=1.4) <input id="sos-g" type="number" value="1.4" step="any"></label>
-      <button onclick="doSOS()">Compute c</button>
+      <button onclick="doSOS()">Solve</button>
       <div id="sos-out" class="result"></div>
-      <p class="note">c = √(γ·R·T₀), T₀ in K. Air shortcut c≈20.06·√T₀</p>
+      <hr style="border-color:#2a3a4d;margin:14px 0">
+      <p class="small">Time-of-flight → c (fills c above, then Solve for T)</p>
+      <label>Distance d (m) <input id="sos-d" type="number" step="any"></label>
+      <label>Travel time t (ms) <input id="sos-t" type="number" step="any"></label>
+      <button onclick="doTOF()">c from d &amp; t</button>
+      <p class="note">c = √(γ·R·T₀), T₀ in K → T = c²/(γR) − 273.2. Air c≈20.06·√T₀ · c = d/t</p>
     </div>
 
     <div class="card">
-      <h3>Particle velocity &amp; displacement</h3>
-      <label>Pressure amplitude P (Pa) <input id="pv-P" type="number" value="2" step="any"></label>
+      <h3>Particle velocity, displacement &amp; SPL</h3>
+      <label>Pressure amplitude P (Pa) <input id="pv-P" type="number" value="2" step="any" placeholder="(blank to solve from u)"></label>
+      <label>RMS particle velocity u<sub>rms</sub> (m/s) <input id="pv-u" type="number" step="any" placeholder="(blank to solve from P)"></label>
       <label>Frequency f (Hz) <input id="pv-f" type="number" value="1000" step="any"></label>
       <label>ρc (rayls) <input id="pv-rc" type="number" value="415" step="any"></label>
-      <button onclick="doParticle()">Compute</button>
+      <label>SPL reference
+        <select id="pv-ref"><option value="2e-5">Air — 20 µPa</option><option value="1e-6">Water — 1 µPa</option></select></label>
+      <div>
+        <button onclick="doParticle()">Compute</button>
+        <button type="button" onclick="pvPreset('air')">Air ρc</button>
+        <button type="button" onclick="pvPreset('water')">Water ρc</button>
+        <button type="button" onclick="pvThreshold()">Just-audible (20 µPa)</button>
+      </div>
       <div id="pv-out" class="result"></div>
-      <p class="note">u = P/ρc · ξ = u/ω · I = P²/(2ρc)</p>
+      <p class="note">û=P/ρc · u<sub>rms</sub>=û/√2 · ξ=û/ω · I=P²/(2ρc) · p<sub>rms</sub>=P/√2 · SPL=20·log(p<sub>rms</sub>/p<sub>ref</sub>)</p>
     </div>
 
     <div class="card">
@@ -282,11 +296,17 @@
       <div id="be-out" class="result"></div>
       <p class="note">%BW = (f<sub>u</sub>−f<sub>l</sub>)/f<sub>c</sub>·100 → octave ≈ 70.7% · ⅓-octave ≈ 23.1%</p>
       <hr style="border-color:#2a3a4d;margin:14px 0">
-      <label>Pipe length L (m), closed one end <input id="pipe-L" type="number" value="0.5" step="any"></label>
+      <label>Pipe length L (m) <input id="pipe-L" type="number" value="0.5" step="any"></label>
       <label>Speed c (m/s) <input id="pipe-c" type="number" value="343" step="any"></label>
+      <label>End condition
+        <select id="pipe-end">
+          <option value="oo">Open–open (both ends open)</option>
+          <option value="oc">Open–closed (one end closed)</option>
+          <option value="cc">Closed–closed (both ends closed)</option>
+        </select></label>
       <button onclick="doPipe()">Natural frequencies</button>
       <div id="pipe-out" class="result"></div>
-      <p class="note">f<sub>n</sub> = (2n−1)·c/(4L)</p>
+      <p class="note">Open–open / closed–closed: f<sub>n</sub> = n·c/(2L) · Open–closed: f<sub>n</sub> = (2n−1)·c/(4L) · ω = 2πf. End effects neglected.</p>
     </div>
   </div>
 </section>
