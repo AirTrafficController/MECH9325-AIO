@@ -94,7 +94,7 @@ const TAB_TAGS = {
   levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts psd power spectral density pa2/hz pa^2/hz integrate area trapezoid band linear flat mean square spectrum frequency limits radiated acoustic power point source 4pir2 directivity q sphere hemisphere siren w from intensity',
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent max maximum machines permitted limit how many under night allowed',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
-  waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1',
+  waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes standing wave open both ends closed one end open-open open-closed closed-closed rad/s plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1 temperature from speed time of flight travel time microphones hot air rms velocity fluctuation sound pressure level spl water reference 1 micropascal threshold of hearing just audible',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate sound power level from spl reverse lw from lp anechoic chamber omni-directional omnidirectional',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment plant room machinery motors combine sound power watts reverberant field spl ceiling coating surface treatment dba reduction before after reverberation test room upholstered furniture equivalent absorption area 0.161v/t60 mean square pressure pa2 reference source club empty furnished',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
@@ -1172,19 +1172,73 @@ function doWave() {
      T = ${(1 / f).toPrecision(4)} s · ω = ${fmt(w, 1)} rad/s · k = ${fmt(k, 3)} rad/m`);
 }
 function doSOS() {
-  const Tc = Number($('sos-T').value), R = Number($('sos-R').value), g = Number($('sos-g').value);
-  const T0 = Tc + 273.2, c = Math.sqrt(g * R * T0);
+  const R = Number($('sos-R').value), g = Number($('sos-g').value);
+  const hasT = !blank('sos-T'), hasC = !blank('sos-c');
+  if (hasT === hasC) return show('sos-out', 'Fill exactly one of Temperature / Speed c and leave the other blank.', 'err');
+  if (hasT) {                                    // T → c
+    const Tc = Number($('sos-T').value), T0 = Tc + 273.2, c = Math.sqrt(g * R * T0);
+    $('sos-c').value = fmt(c, 2);
+    show('sos-out',
+      `T₀ = ${fmt(T0, 1)} K<br>c = √(${g}·${R}·${fmt(T0, 1)}) = <b>${fmt(c, 2)} m/s</b>` +
+      work([
+        `c = √(γ·R·T₀) = √(${g}·${R}·${fmt(T0, 1)}) = <b>${fmt(c, 2)} m/s</b>`,
+        `Air shortcut 20.06·√T₀ = ${fmt(20.06 * Math.sqrt(T0), 2)} m/s`,
+      ]));
+  } else {                                       // c → T
+    const c = Number($('sos-c').value), T0 = c * c / (g * R), Tc = T0 - 273.2;
+    $('sos-T').value = fmt(Tc, 1);
+    show('sos-out',
+      `T₀ = c²/(γ·R) = ${fmt(c, 2)}²/(${g}·${R}) = ${fmt(T0, 1)} K<br>T = <b>${fmt(Tc, 1)} °C</b>` +
+      work([
+        `T₀ = c²/(γ·R) = ${fmt(c, 2)}²/(${g}·${R}) = ${fmt(T0, 1)} K`,
+        `T = T₀ − 273.2 = <b>${fmt(Tc, 1)} °C</b>`,
+      ]));
+  }
+}
+function doTOF() {
+  const d = Number($('sos-d').value), t = Number($('sos-t').value) / 1000;   // ms → s
+  if (!(d > 0) || !(t > 0)) return show('sos-out', 'Enter positive distance and travel time.', 'err');
+  const c = d / t;
+  $('sos-c').value = fmt(c, 2); $('sos-T').value = '';
+  const R = Number($('sos-R').value), g = Number($('sos-g').value);
+  const T0 = c * c / (g * R), Tc = T0 - 273.2;
+  $('sos-T').value = fmt(Tc, 1);
   show('sos-out',
-    `T₀ = ${fmt(T0, 1)} K<br>c = √(${g}·${R}·${fmt(T0, 1)}) = <b>${fmt(c, 2)} m/s</b><br>
-     <span class="small">Air shortcut 20.06·√T₀ = ${fmt(20.06 * Math.sqrt(T0), 2)} m/s</span>`);
+    `c = d/t = ${fmt(d, 2)}/${(t).toPrecision(3)} = <b>${fmt(c, 2)} m/s</b><br>T = <b>${fmt(Tc, 1)} °C</b>` +
+    work([
+      `c = d/t = ${fmt(d, 2)} / ${(t).toPrecision(3)} s = <b>${fmt(c, 2)} m/s</b>`,
+      `T₀ = c²/(γ·R) = ${fmt(c, 2)}²/(${g}·${R}) = ${fmt(T0, 1)} K`,
+      `T = T₀ − 273.2 = <b>${fmt(Tc, 1)} °C</b>`,
+    ]));
+}
+function pvPreset(medium) {
+  $('pv-rc').value = medium === 'water' ? 1.5e6 : 415;
+  $('pv-ref').value = medium === 'water' ? '1e-6' : '2e-5';
+}
+function pvThreshold() {                          // just-audible: p_rms = 20 µPa
+  $('pv-P').value = (Math.SQRT2 * 2e-5).toExponential(3);   // peak amplitude
+  $('pv-u').value = ''; $('pv-rc').value = 415; $('pv-ref').value = '2e-5';
+  if (blank('pv-f')) $('pv-f').value = 4000;
+  doParticle();
 }
 function doParticle() {
-  const P = Number($('pv-P').value), f = Number($('pv-f').value), rc = Number($('pv-rc').value);
-  const w = 2 * Math.PI * f, u = P / rc, xi = u / w, I = P * P / (2 * rc);
+  const f = Number($('pv-f').value), rc = Number($('pv-rc').value), pref = Number($('pv-ref').value);
+  const hasP = !blank('pv-P'), hasU = !blank('pv-u');
+  if (hasP === hasU) return show('pv-out', 'Fill exactly one of Pressure P / RMS velocity u and leave the other blank.', 'err');
+  if (!(f > 0) || !(rc > 0)) return show('pv-out', 'Frequency and ρc must be > 0.', 'err');
+  let P;                                          // peak pressure amplitude
+  if (hasP) { P = Number($('pv-P').value); $('pv-u').value = ''; }
+  else { P = Math.SQRT2 * rc * Number($('pv-u').value); $('pv-P').value = P.toExponential(3); }
+  const w = 2 * Math.PI * f;
+  const uHat = P / rc, uRms = uHat / Math.SQRT2, xi = uHat / w;
+  const I = P * P / (2 * rc), pRms = P / Math.SQRT2, spl = 20 * lg(pRms / pref);
   show('pv-out',
-    `Particle velocity u = <b>${u.toExponential(3)} m/s</b><br>
-     Displacement ξ = <b>${xi.toExponential(3)} m</b><br>
-     Intensity I = <b>${I.toExponential(3)} W/m²</b>`);
+    `Particle velocity amplitude û = <b>${uHat.toExponential(3)} m/s</b><br>
+     RMS particle velocity u<sub>rms</sub> = <b>${uRms.toExponential(3)} m/s</b><br>
+     Displacement amplitude ξ = <b>${xi.toExponential(3)} m</b>${xi < 1e-9 ? ` (${fmt(xi * 1e12, 3)} pm)` : ''}<br>
+     Intensity I = <b>${I.toExponential(3)} W/m²</b><br>
+     p<sub>rms</sub> = <b>${pRms.toExponential(3)} Pa</b><br>
+     SPL = 20·log(${sci(pRms)}/${sci(pref)}) = <b>${fmt(spl, 2)} dB</b> (re ${sci(pref)} Pa)`);
 }
 function doBandEdges() {
   const fc = Number($('be-fc').value), type = $('be-type').value;
@@ -1205,11 +1259,19 @@ function doBandEdges() {
     ]));
 }
 function doPipe() {
-  const L = Number($('pipe-L').value), c = Number($('pipe-c').value);
-  if (!(L > 0)) return show('pipe-out', 'Length must be > 0.', 'err');
+  const L = Number($('pipe-L').value), c = Number($('pipe-c').value), end = $('pipe-end').value;
+  if (!(L > 0) || !(c > 0)) return show('pipe-out', 'Length and speed must be > 0.', 'err');
+  const oc = end === 'oc';                        // open–closed uses odd harmonics only
+  const label = oc ? 'Open–closed: fₙ = (2n−1)·c/(4L)'
+    : end === 'cc' ? 'Closed–closed: fₙ = n·c/(2L)'
+      : 'Open–open: fₙ = n·c/(2L)';
   let s = '';
-  for (let n = 1; n <= 4; n++) s += `f<sub>${n}</sub> = <b>${fmt((2 * n - 1) * c / (4 * L), 1)} Hz</b><br>`;
-  show('pipe-out', s);
+  for (let n = 1; n <= 3; n++) {
+    const f = oc ? (2 * n - 1) * c / (4 * L) : n * c / (2 * L);
+    const w = 2 * Math.PI * f;
+    s += `n=${n}: f = <b>${fmt(f, 2)} Hz</b> · ω = <b>${fmt(w, 1)} rad/s</b><br>`;
+  }
+  show('pipe-out', s + `<span class="small">${label}</span>`);
 }
 
 /* ---------------- Lw → Lp at distance ---------------- */
