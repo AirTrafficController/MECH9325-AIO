@@ -865,6 +865,27 @@
     <div id="mpt-out" class="result"></div>
     <p class="note">T = T<sub>c</sub> / 2<sup>(L − L<sub>c</sub>)/q</sup></p>
   </div>
+
+  <div class="card">
+    <h3>Hearing protector — SLC₈₀ method</h3>
+    <p class="desc">Protected A-weighted level = <span class="f">L<sub>Ceq</sub> − SLC₈₀</span>.
+       The rating is subtracted from the <strong>C-weighted</strong> level (AS/NZS 1269.3),
+       <em>not</em> L<sub>Aeq</sub> — subtracting from L<sub>Aeq</sub> double-counts the low
+       frequencies (discounted once by the A-curve, again by the muff) and overstates protection.</p>
+    <div class="row">
+      <label>C-weighted level L<sub>Ceq</sub> (dB(C))
+        <input id="hp-Lc" type="number" step="any" placeholder="(blank to compute from bands)"></label>
+      <label>Protector rating SLC₈₀ (dB)
+        <input id="hp-slc" type="number" value="27" step="any"></label>
+    </div>
+    <label>Or octave-band levels to get L<sub>Ceq</sub> — “freq, level” per line (dB, linear/unweighted)
+      <textarea id="hp-bands" rows="4" placeholder="250, 99&#10;500, 95"></textarea></label>
+    <button onclick="doProtector()">Compute protected level</button>
+    <div id="hp-out" class="result"></div>
+    <p class="note">L<sub>Ceq</sub> = 10·log(Σ10<sup>(L<sub>i</sub>+C<sub>i</sub>)/10</sup>) &nbsp;·&nbsp;
+       L′<sub>Aeq</sub> = L<sub>Ceq</sub> − SLC₈₀. &nbsp;C-weighting is ≈0 dB at 250 Hz / 500 Hz and
+       falls off at low frequency, so for this band content L<sub>Ceq</sub> = L<sub>eq</sub> (linear).</p>
+  </div>
 </section>
 
 <!-- ============================ LOUDNESS ============================ -->

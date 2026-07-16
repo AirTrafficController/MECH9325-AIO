@@ -102,7 +102,7 @@ const TAB_TAGS = {
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
   bands: 'band workbench third octave to octave combine spls overall spl a-weighted dba one third 1/3 octave consecutive bands triplet convert all in one part a b spectrum analysis nine bands',
   leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq integral integrate function ramp formula rising noise event percentile ln l10 l90 level exceeded percent five minute',
-  dose: 'noise dose ohs oh&s occupational exposure limit 85 db permissible time exchange rate hearing shift worker percent percentage criterion',
+  dose: 'noise dose ohs oh&s occupational exposure limit 85 db permissible time exchange rate hearing shift worker percent percentage criterion hearing protector ear muff earmuff slc80 slc 80 nrr c-weighted lceq protected attenuation as/nzs 1269 reduce level',
   loud: 'loudness phon phons sone sones equal loudness contour conversion subjective hearing',
   speech: 'speech psil sil interference voice effort communication distance talker listener 500 1000 2000 articulation a-weighted voice level vla required possible face to face shouting raised normal peak eq 5.6 table 5.2',
   community: 'community noise day night ldn lden penalty environmental planning residential',
@@ -954,6 +954,36 @@ function doMaxTime() {
       `= <b>${fmt(T, 4)} h</b>`,
     ]),
     exceed ? 'warn' : 'ok');
+}
+/* ---- Hearing protector: SLC₈₀ method — protected L_Aeq = L_Ceq − SLC₈₀ ---- */
+function doProtector() {
+  const slc = Number($('hp-slc').value);
+  if (!isFinite(slc)) return show('hp-out', 'Enter a numeric SLC₈₀ rating.', 'err');
+  let Lc; const steps = [];
+  if (!blank('hp-Lc')) {
+    Lc = Number($('hp-Lc').value);
+    if (!isFinite(Lc)) return show('hp-out', 'L_Ceq must be numeric.', 'err');
+  } else {
+    const valid = parseRows($('hp-bands').value)
+      .filter(r => r.length >= 2 && isFinite(r[0]) && isFinite(r[1]));
+    if (!valid.length) return show('hp-out', 'Enter L_Ceq, or octave-band “freq, level” rows.', 'err');
+    let sum = 0; const parts = [];
+    valid.forEach(([f, L]) => {
+      const cw = weightOffset(f, 'C');
+      sum += 10 ** ((L + cw) / 10);
+      parts.push(`${fmt(f, 0)}Hz ${fmt(L, 1)}+(${fmt(cw, 1)})=${fmt(L + cw, 1)}`);
+    });
+    Lc = 10 * lg(sum);
+    $('hp-Lc').value = fmt(Lc, 2);
+    steps.push(`Apply C-weighting per band: ${parts.join(' · ')}`);
+    steps.push(`L_Ceq = 10·log₁₀( Σ 10^((Lᵢ+Cᵢ)/10) ) = <b>${fmt(Lc, 2)} dB(C)</b>`);
+  }
+  const prot = Lc - slc;
+  steps.push(`L′_Aeq = L_Ceq − SLC₈₀ = ${fmt(Lc, 2)} − ${fmt(slc, 2)} = <b>${fmt(prot, 2)} dB(A)</b>`);
+  show('hp-out',
+    `Protected level L′<sub>Aeq</sub> = <b>${fmt(prot, 2)} dB(A)</b> ` +
+    `<span class="small">(from L<sub>Ceq</sub> = ${fmt(Lc, 2)} dB(C) − SLC₈₀ ${fmt(slc, 1)} dB)</span>` +
+    work(steps));
 }
 
 /* ---------------- Loudness ---------------- */
