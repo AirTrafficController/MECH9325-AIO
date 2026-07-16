@@ -1270,10 +1270,10 @@ function doPipe() {
     const f = oc ? (2 * n - 1) * c / (4 * L) : n * c / (2 * L);
     const w = 2 * Math.PI * f;
     s += `n=${n}: f = <b>${fmt(f, 2)} Hz</b> · ω = <b>${fmt(w, 1)} rad/s</b><br>`;
-    const sub = oc ? `(2·${n}−1)·${fmt(c, 1)} / (4·${fmt(L, 3)})`
-      : `${n}·${fmt(c, 1)} / (2·${fmt(L, 3)})`;
+    const sub = oc ? `(2×${n}−1)×${fmt(c, 1)} / (4×${fmt(L, 3)})`
+      : `${n}×${fmt(c, 1)} / (2×${fmt(L, 3)})`;
     steps.push(
-      `f<sub>${n}</sub> = ${sub} = <b>${fmt(f, 2)} Hz</b> → ω = 2π·${fmt(f, 2)} = <b>${fmt(w, 1)} rad/s</b>`);
+      `f<sub>${n}</sub> = ${sub} = <b>${fmt(f, 2)} Hz</b> → ω = 2π×${fmt(f, 2)} = <b>${fmt(w, 1)} rad/s</b>`);
   }
   show('pipe-out', s + work(steps));
 }
