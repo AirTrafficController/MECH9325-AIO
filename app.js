@@ -1262,16 +1262,20 @@ function doPipe() {
   const L = Number($('pipe-L').value), c = Number($('pipe-c').value), end = $('pipe-end').value;
   if (!(L > 0) || !(c > 0)) return show('pipe-out', 'Length and speed must be > 0.', 'err');
   const oc = end === 'oc';                        // open–closed uses odd harmonics only
-  const label = oc ? 'Open–closed: fₙ = (2n−1)·c/(4L)'
-    : end === 'cc' ? 'Closed–closed: fₙ = n·c/(2L)'
-      : 'Open–open: fₙ = n·c/(2L)';
+  const name = oc ? 'Open–closed' : end === 'cc' ? 'Closed–closed' : 'Open–open';
+  const formula = oc ? 'fₙ = (2n−1)·c/(4L)' : 'fₙ = n·c/(2L)';
   let s = '';
+  const steps = [`${name} pipe: ${formula},  ω = 2π·f  (L = ${fmt(L, 3)} m, c = ${fmt(c, 1)} m/s)`];
   for (let n = 1; n <= 3; n++) {
     const f = oc ? (2 * n - 1) * c / (4 * L) : n * c / (2 * L);
     const w = 2 * Math.PI * f;
     s += `n=${n}: f = <b>${fmt(f, 2)} Hz</b> · ω = <b>${fmt(w, 1)} rad/s</b><br>`;
+    const sub = oc ? `(2·${n}−1)·${fmt(c, 1)} / (4·${fmt(L, 3)})`
+      : `${n}·${fmt(c, 1)} / (2·${fmt(L, 3)})`;
+    steps.push(
+      `f<sub>${n}</sub> = ${sub} = <b>${fmt(f, 2)} Hz</b> → ω = 2π·${fmt(f, 2)} = <b>${fmt(w, 1)} rad/s</b>`);
   }
-  show('pipe-out', s + `<span class="small">${label}</span>`);
+  show('pipe-out', s + work(steps));
 }
 
 /* ---------------- Lw → Lp at distance ---------------- */
