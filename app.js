@@ -98,7 +98,7 @@ const TAB_TAGS = {
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate sound power level from spl reverse lw from lp anechoic chamber omni-directional omnidirectional',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment plant room machinery motors combine sound power watts reverberant field spl ceiling coating surface treatment dba reduction before after reverberation test room upholstered furniture equivalent absorption area 0.161v/t60 mean square pressure pa2 reference source club empty furnished',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
-  duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer',
+  duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer band spl octave to intensity radiated power per band total sound power level w=ia combine speaker',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
   bands: 'band workbench third octave to octave combine spls overall spl a-weighted dba one third 1/3 octave consecutive bands triplet convert all in one part a b spectrum analysis nine bands',
   leq: 'leq laeq equivalent continuous level time varying duration events train pass by meter periods exposure energy average lateq integral integrate function ramp formula rising noise event percentile ln l10 l90 level exceeded percent five minute',
@@ -1774,6 +1774,39 @@ function doDuct() {
       `mic sensitivity = 10^(S/20) = 10^(${fmt(Sdb)}/20) = ${sci(sens)} V/Pa`,
       `V = p_rms · 10^(S/20) = ${p.toPrecision(4)} · ${sci(sens)} = <b>${V.toPrecision(4)} V</b>`,
     ]) + modeNote);
+}
+/* ---- Band SPL → intensity & radiated power (plane wave in a duct) ---- */
+function doDuctPower() {
+  const d = Number($('dp-d').value) / 1000;            // mm → m
+  const rho = Number($('dp-rho').value), c = Number($('dp-c').value);
+  if (!(d > 0)) return show('dp-out', 'Pipe diameter must be > 0.', 'err');
+  if (!(rho > 0 && c > 0)) return show('dp-out', 'Density and sound speed must be > 0.', 'err');
+  const levels = $('dp-list').value.trim().split('\n')
+    .map(s => Number(s.trim())).filter(s => !isNaN(s));
+  if (!levels.length) return show('dp-out', 'Enter at least one band SPL.', 'err');
+
+  const A = Math.PI * d * d / 4, rc = rho * c;
+  let sumW = 0, sumI = 0, rows = '';
+  levels.forEach((Lp, i) => {
+    const p = P_REF * 10 ** (Lp / 20);                 // RMS pressure, Pa
+    const I = p * p / rc;                              // plane-wave intensity, W/m²
+    const W = I * A;                                   // radiated power, W
+    sumW += W; sumI += I;
+    rows += `Band ${i + 1} (${fmt(Lp, 1)} dB): p<sub>rms</sub> = <b>${p.toPrecision(4)} Pa</b> · ` +
+      `I = <b>${I.toExponential(3)} W/m²</b> · W = <b>${W.toExponential(3)} W</b><br>`;
+  });
+  const LpTot = 10 * lg(levels.reduce((a, L) => a + 10 ** (L / 10), 0));
+  const LwTot = 10 * lg(sumW / W_REF);
+
+  show('dp-out', rows +
+    `<br>Total SPL = <b>${fmt(LpTot, 2)} dB</b> · Total power ΣW = <b>${sumW.toExponential(3)} W</b> · ` +
+    `Total L<sub>w</sub> = <b>${fmt(LwTot, 2)} dB</b>` +
+    work([
+      `A = πd²/4 = π·(${fmt(d, 4)})²/4 = ${sci(A)} m²`,
+      `Per band: p_rms = p_ref·10^(Lp/20),  I = p_rms²/ρc  (ρc = ${fmt(rho)}·${fmt(c)} = ${fmt(rc, 1)} rayls),  W = I·A`,
+      `L_p,total = 10·log₁₀( Σ 10^(Lp/10) ) = <b>${fmt(LpTot, 2)} dB</b>`,
+      `ΣW = ${sci(sumW)} W → L_w,total = 10·log₁₀(ΣW/10⁻¹²) = <b>${fmt(LwTot, 2)} dB</b>`,
+    ]));
 }
 
 /* ---------------- Community noise ---------------- */

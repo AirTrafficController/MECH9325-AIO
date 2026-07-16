@@ -651,6 +651,33 @@
        p<sub>rms</sub> = √(I·ρc) &nbsp;·&nbsp; V = p<sub>rms</sub>·10<sup>S/20</sup>.
        Higher-order modes cut on above f<sub>c</sub> = 1.841·c/(πd).</p>
   </div>
+
+  <div class="card">
+    <h3>Band SPL → intensity &amp; radiated power (plane wave in duct)</h3>
+    <p class="desc">The reverse direction: from measured band sound pressure levels in the pipe,
+       get the RMS pressure, intensity and <strong>radiated power</strong> in each band
+       (power = intensity × cross-section, not a point-source 4πr²), plus the overall SPL and
+       sound power level.</p>
+    <div class="row">
+      <label>Pipe diameter d (mm)
+        <input id="dp-d" type="number" value="86" step="any"></label>
+      <label>Air density ρ (kg/m³)
+        <input id="dp-rho" type="number" value="1.21" step="any"></label>
+      <label>Sound speed c (m/s)
+        <input id="dp-c" type="number" value="343" step="any"></label>
+    </div>
+    <label>Band SPLs L<sub>p</sub> (dB re 20 µPa) — one per line
+      <textarea id="dp-list" rows="4" placeholder="106&#10;105&#10;105&#10;94">106
+105
+105
+94</textarea></label>
+    <button onclick="doDuctPower()">Compute intensity &amp; power</button>
+    <div id="dp-out" class="result"></div>
+    <p class="note">A = πd²/4 &nbsp;·&nbsp; p<sub>rms</sub> = p<sub>ref</sub>·10<sup>Lp/20</sup> &nbsp;·&nbsp;
+       I = p<sub>rms</sub>²/ρc &nbsp;·&nbsp; W = I·A &nbsp;·&nbsp;
+       L<sub>p,tot</sub> = 10·log(Σ10<sup>Lp/10</sup>) &nbsp;·&nbsp;
+       L<sub>w,tot</sub> = 10·log(ΣW/10⁻¹²).</p>
+  </div>
 </section>
 
 <!-- ============================ WEIGHTING ============================ -->
