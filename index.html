@@ -570,6 +570,33 @@
   </div>
 
   <div class="card">
+    <h3>L<sub>w</sub> from partial-surface SPLs (enveloping surface)</h3>
+    <p class="hint">For a source enclosed by an imaginary measurement surface (e.g. a cuboid box)
+       divided into partial surfaces. Enter each partial surface's SPL and area
+       (<code>SPL, area</code>); leave the area blank to use the default below. The overall level is the
+       <strong>area-weighted energy average</strong> L̄<sub>p</sub>, then the total surface area is added.
+       Enter <strong>A-weighted</strong> SPLs to get L<sub>w</sub> directly in dB(A). Set K₁/K₂ for
+       background/environmental corrections, or leave them blank (= 0) for a clean free-field surface.</p>
+    <div class="lt-grid" data-target="sp-list"></div>
+    <details class="bulk"><summary>Bulk paste / edit as text (one row: <code>SPL[, area]</code>)</summary>
+    <textarea id="sp-list" rows="6" placeholder="89, 2&#10;87, 2&#10;80, 2"></textarea>
+    <button type="button" data-applygrid="sp-list">Apply to grid</button></details>
+    <div class="row">
+      <label>Default area per surface S<sub>i</sub> (m²) <input id="sp-area" type="number" step="any" placeholder="e.g. 2"></label>
+      <label>K₁ (dB, optional) <input id="sp-k1" type="number" step="any" placeholder="0"></label>
+      <label>K₂ (dB, optional) <input id="sp-k2" type="number" step="any" placeholder="0"></label>
+    </div>
+    <div class="row">
+      <button onclick="doLwPartial()">Compute L<sub>w</sub></button>
+      <button type="button" onclick="prefillPartial()">Load engine example</button>
+    </div>
+    <div id="sp-out" class="result"></div>
+    <p class="note">S = ΣS<sub>i</sub> &nbsp;·&nbsp;
+       L̄<sub>p</sub> = 10·log<sub>10</sub>( ΣS<sub>i</sub>·10<sup>(L<sub>i</sub>−K₁−K₂)/10</sup> / S ) &nbsp;·&nbsp;
+       L<sub>w</sub> = L̄<sub>p</sub> + 10·log<sub>10</sub>(S/S₀), S₀ = 1 m²</p>
+  </div>
+
+  <div class="card">
     <h3>L<sub>w</sub> from free-field band SPLs (un-weight + surface area)</h3>
     <p class="hint">For a source measured in a <strong>free field</strong> (e.g. sitting on the ground) with no
        background/room corrections needed. Enter the octave (or ⅓-octave) band SPLs; if they are

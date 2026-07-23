@@ -97,7 +97,7 @@ const TAB_TAGS = {
   waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes standing wave open both ends closed one end open-open open-closed closed-closed rad/s plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1 temperature from speed time of flight travel time microphones hot air rms velocity fluctuation sound pressure level spl water reference 1 micropascal threshold of hearing just audible',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate sound power level from spl reverse lw from lp anechoic chamber omni-directional omnidirectional',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment plant room machinery motors combine sound power watts reverberant field spl ceiling coating surface treatment dba reduction before after reverberation test room upholstered furniture equivalent absorption area 0.161v/t60 mean square pressure pa2 reference source club empty furnished',
-  power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level',
+  power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level partial surface partial surfaces enveloping enclosing surface cuboid box engine car six surfaces equal area area-weighted energy average combine measured surface spls determine sound power level from surface pressure levels',
   duct: 'duct pipe tube voltage microphone mic sensitivity v/pa volts millivolt sound power lw power level watts intensity plane wave rms pressure radiated source anechoic no reflection diameter cross section transducer band spl octave to intensity radiated power per band total sound power level w=ia combine speaker',
   weight: 'weighting a weighting b c weighted dba db(a) dbb dbc octave third octave band overall level network frequency analysis spectrum',
   bands: 'band workbench third octave to octave combine spls overall spl a-weighted dba one third 1/3 octave consecutive bands triplet convert all in one part a b spectrum analysis nine bands',
@@ -1674,6 +1674,67 @@ function doLwMeas() {
   show('lwm-out', `L<sub>w</sub> = <b>${fmt(Lw, 2)} dB</b> &nbsp;<span class="small">= (${lp}−${k1}−${k2}) + 10·log₁₀(${S})</span>`);
 }
 
+/* ---- L_w from partial-surface SPLs over an enveloping (e.g. cuboid) surface ----
+   Area-weighted energy average of the partial-surface SPLs, then add the total
+   surface area. Inputs may be A-weighted → L_w comes out in dB(A). Blank area on a
+   row falls back to the default "area per surface" field (equal-area case). */
+function prefillPartial() {
+  $('sp-list').value = '89, 2\n87, 2\n80, 2\n95, 2\n90, 2\n87, 2';
+  $('sp-area').value = 2;
+  $('sp-k1').value = ''; $('sp-k2').value = '';
+  buildGrid('sp-list');
+}
+function doLwPartial() {
+  const defA = blank('sp-area') ? NaN : Number($('sp-area').value);
+  const k1 = blank('sp-k1') ? 0 : Number($('sp-k1').value);
+  const k2 = blank('sp-k2') ? 0 : Number($('sp-k2').value);
+  const lines = $('sp-list').value.trim().split('\n').map(l => l.trim()).filter(l => l.length);
+  const surfaces = [];
+  let bad = false, needArea = false;
+  lines.forEach(line => {
+    const parts = line.split(/[,\s]+/).filter(p => p !== '');
+    const L = Number(parts[0]);
+    if (!parts.length || isNaN(L)) { bad = true; return; }
+    const S = parts.length >= 2 ? Number(parts[1]) : defA;
+    if (isNaN(S)) { needArea = true; return; }
+    if (!(S > 0)) { bad = true; return; }
+    surfaces.push({ L, S });
+  });
+  if (needArea) return show('sp-out', 'A surface has no area — add it on the row (SPL, area) or set a default area per surface.', 'err');
+  if (bad || !surfaces.length) return show('sp-out', 'Each surface needs an SPL and a positive area.', 'err');
+
+  const Stot = surfaces.reduce((a, s) => a + s.S, 0);
+  const kc = k1 + k2;                                          // total correction
+  const energy = surfaces.reduce((a, s) => a + s.S * e10(s.L - kc), 0);  // Σ Sᵢ·10^((Lᵢ−K)/10)
+  const Lpbar = 10 * lg(energy / Stot);                        // area-weighted surface-average SPL
+  const Lw = Lpbar + 10 * lg(Stot);                            // + 10·log₁₀(S/S₀), S₀ = 1 m²
+  const equal = surfaces.every(s => Math.abs(s.S - surfaces[0].S) < 1e-9);
+
+  let t = `<table class="bands"><tr><th>i</th><th>Lᵢ (dB)</th>`;
+  if (kc !== 0) t += `<th>−K₁−K₂</th>`;
+  t += `<th>Sᵢ (m²)</th></tr>`;
+  surfaces.forEach((s, i) => {
+    t += `<tr><td>${i + 1}</td><td>${fmt(s.L)}</td>`;
+    if (kc !== 0) t += `<td>${fmt(s.L - kc, 1)}</td>`;
+    t += `<td>${fmt(s.S)}</td></tr>`;
+  });
+  t += `<tr><td><b>Σ</b></td><td></td>${kc !== 0 ? '<td></td>' : ''}<td><b>${fmt(Stot)}</b></td></tr></table>`;
+
+  const meanExpr = equal
+    ? `10·log₁₀( (1/${surfaces.length})·Σ 10^(${kc !== 0 ? '(Lᵢ−K₁−K₂)' : 'Lᵢ'}/10) )`
+    : `10·log₁₀( Σ Sᵢ·10^(${kc !== 0 ? '(Lᵢ−K₁−K₂)' : 'Lᵢ'}/10) / S )`;
+
+  show('sp-out',
+    `${t}
+     <div class="big">L<sub>w</sub> = <b>${fmt(Lw, 1)} dB</b></div>` +
+    work([
+      `Total measurement surface  S = ΣSᵢ = <b>${fmt(Stot)} m²</b>${equal ? ` (${surfaces.length} × ${fmt(surfaces[0].S)} m²)` : ''}`,
+      kc !== 0 ? `Corrected each partial SPL by −K₁−K₂ = −${fmt(kc, 2)} dB` : `No K₁/K₂ correction (background/room ignored).`,
+      `Surface-average SPL  L̄_p = ${meanExpr} = <b>${fmt(Lpbar, 2)} dB</b>`,
+      `L_w = L̄_p + 10·log₁₀(S/S₀) = ${fmt(Lpbar, 2)} + 10·log₁₀(${fmt(Stot)}) = <b>${fmt(Lw, 2)} dB</b>`,
+    ]));
+}
+
 /* ---- L_w from free-field band SPLs: un-weight A/B/C bands, sum, add surface area ---- */
 function powerBandSet() {
   const m = $('p-band').value;
@@ -1944,6 +2005,7 @@ const GRID_CONFIG = {
   'combine-list': [{ h: 'Level dB', t: 'number' }],
   'rms-list':     [{ h: 'RMS pressure (Pa)', t: 'number' }],
   'aa-list':      [{ h: 'Area S (m²)', t: 'number' }, { h: 'α', t: 'number' }],
+  'sp-list':      [{ h: 'SPL dB', t: 'number' }, { h: 'Area Sᵢ (m²)', t: 'number' }],
   'sort-list':    [{ h: 'Value dB', t: 'number' }],
 };
 function gridRowsFromText(text, ncols) {
