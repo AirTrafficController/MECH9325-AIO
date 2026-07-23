@@ -304,9 +304,13 @@
           <option value="oc">Open–closed (one end closed)</option>
           <option value="cc">Closed–closed (both ends closed)</option>
         </select></label>
-      <button onclick="doPipe()">Natural frequencies</button>
+      <div class="row">
+        <button onclick="doPipe()">Natural frequencies</button>
+        <button type="button" onclick="prefillPipe()">Load pipe example</button>
+      </div>
       <div id="pipe-out" class="result"></div>
-      <p class="note">Open–open / closed–closed: f<sub>n</sub> = n·c/(2L) · Open–closed: f<sub>n</sub> = (2n−1)·c/(4L) · ω = 2πf. End effects neglected.</p>
+      <p class="note">Open–open / closed–closed: f<sub>n</sub> = n·c/(2L) · Open–closed: f<sub>n</sub> = (2n−1)·c/(4L) · ω = 2πf.
+         Also gives the pressure node at the fundamental (closed end = antinode, open end = node). Diameter/end effects neglected.</p>
     </div>
   </div>
 </section>
