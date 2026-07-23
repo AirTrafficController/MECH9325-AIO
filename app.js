@@ -94,7 +94,7 @@ const TAB_TAGS = {
   levels: 'spl lp sound pressure level lw sound power watt li intensity i=p2 p^2 rho c pascal pa rms peak amplitude p_ref reference 20 micropascal decibel db conversion convert tone tones combine watts psd power spectral density pa2/hz pa^2/hz integrate area trapezoid band linear flat mean square spectrum frequency limits radiated acoustic power point source 4pir2 directivity q sphere hemisphere siren w from intensity',
   combine: 'combine add addition sum total decibel db incoherent sources identical n typewriters dogs energy increase more sources louder error larger signal smaller ignore neglect approximate estimate rms quadrature ratio percent max maximum machines permitted limit how many under night allowed',
   subtract: 'subtract subtraction remove background source minus one of n decibel db difference',
-  waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes standing wave open both ends closed one end open-open open-closed closed-closed rad/s plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1 temperature from speed time of flight travel time microphones hot air rms velocity fluctuation sound pressure level spl water reference 1 micropascal threshold of hearing just audible',
+  waves: 'wave waves wavelength lambda frequency f speed of sound c=fl c celerity temperature gas constant gamma wavenumber k omega angular period t particle velocity displacement xi octave band edges centre frequency third pipe natural frequency resonance modes standing wave open both ends closed one end open-open open-closed closed-closed rad/s pressure node nodal point location along pipe antinode fundamental lowest natural frequency node position plane wave bandwidth percentage filter %bw constant percentage 70.7 23.1 temperature from speed time of flight travel time microphones hot air rms velocity fluctuation sound pressure level spl water reference 1 micropascal threshold of hearing just audible',
   dist: 'distance attenuation spreading geometric point source line source traffic 6 db 3 db doubling inverse square lp lw free field hemispherical ground propagation outdoor solve unknown distance two levels back out rifle range y near far increment estimate sound power level from spl reverse lw from lp anechoic chamber omni-directional omnidirectional',
   room: 'room acoustics reverberation rt60 t60 sabine absorption coefficient alpha average room constant r direct reverberant field directivity q room equation lp lw enclosure add remove panels absorber suspended panel both sides increase level reverberant change refurbish office acoustic treatment plant room machinery motors combine sound power watts reverberant field spl ceiling coating surface treatment dba reduction before after reverberation test room upholstered furniture equivalent absorption area 0.161v/t60 mean square pressure pa2 reference source club empty furnished',
   power: 'sound power measurement lw k1 k2 background correction environmental hemisphere sphere surface area reference source mean spl unweighted un-weight a-weighted dba octave band drill free field on the ground total unweighted sound power level partial surface partial surfaces enveloping enclosing surface cuboid box engine car six surfaces equal area area-weighted energy average combine measured surface spls determine sound power level from surface pressure levels',
@@ -1288,6 +1288,9 @@ function doBandEdges() {
       `(= ${kStr} − 1/${kStr}, constant for any f_c → ${name} ≈ ${ref} %)`,
     ]));
 }
+function prefillPipe() {
+  $('pipe-L').value = 2; $('pipe-c').value = 343; $('pipe-end').value = 'cc';
+}
 function doPipe() {
   const L = Number($('pipe-L').value), c = Number($('pipe-c').value), end = $('pipe-end').value;
   if (!(L > 0) || !(c > 0)) return show('pipe-out', 'Length and speed must be > 0.', 'err');
@@ -1305,6 +1308,25 @@ function doPipe() {
     steps.push(
       `f<sub>${n}</sub> = ${sub} = <b>${fmt(f, 2)} Hz</b> → ω = 2π×${fmt(f, 2)} = <b>${fmt(w, 1)} rad/s</b>`);
   }
+
+  // Pressure node location(s) at the lowest natural frequency (n = 1).
+  // A closed/rigid end is a pressure ANTINODE; an open end is a pressure NODE.
+  let nodes, bc;
+  if (oc) {
+    nodes = [L];                                   // closed end antinode, open end node
+    bc = 'closed end = pressure antinode, open end = pressure node';
+  } else if (end === 'cc') {
+    nodes = [L / 2];                               // antinodes at both ends → one central node
+    bc = 'both closed ends = pressure antinodes → a single pressure node at the centre';
+  } else {
+    nodes = [0, L];                                // both open ends are pressure nodes
+    bc = 'both open ends = pressure nodes';
+  }
+  const nodeStr = nodes.map(x => `${fmt(x, 3)} m`).join(', ');
+  s += `<b>Pressure node at lowest frequency (n=1): x = ${nodeStr}</b>`;
+  steps.push(`Lowest frequency (n=1): ${bc}.`);
+  steps.push(`⇒ pressure node at x = <b>${nodeStr}</b>${end === 'cc' ? ` (= L/2 = ${fmt(L, 3)}/2)` : ''}`);
+
   show('pipe-out', s + work(steps));
 }
 
